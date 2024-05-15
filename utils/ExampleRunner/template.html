@@ -1,27 +1,658 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
-    />
-  </head>
-  <body>
-    <!-- TODO -> Style the title and description components so they are the same in every demo-->
-    <div id="demo-title-container">
-      <h1 id="demo-title">
-        <!-- Insert demo title here during demo -->
-      </h1>
+<head>
+  <title>NVIDIA / VISTA-3D NIM</title>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"
+        integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+        rel="stylesheet">
+  <style>
+      body {
+          background-color: #111827;
+          color: #f9fafb;
+          font-family: "Open Sans", sans-serif;
+      }
+
+      input, select {
+          color: black;
+          padding: 0.5rem;
+          border: 1px solid #ccc;
+          border-radius: 0.25rem;
+      }
+
+      button {
+          background-color: #76b900;
+          color: #f9fafb;
+          font-weight: bold;
+          padding: 0.5rem 1rem;
+          border-radius: 0.25rem;
+          cursor: pointer;
+      }
+
+      button:hover {
+          background-color: rgb(152, 228, 91);
+      }
+
+      button:disabled {
+          background-color: grey !important;
+      }
+
+      .card {
+          background: rgba(0, 0, 0, 0.5);
+          border-radius: 10px;
+          padding: 20px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .card2 {
+          background: white;
+          border-radius: 10px;
+          padding: 20px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+          color: black;
+          font-family: "Open Sans", sans-serif;
+      }
+
+      h1 {
+          font-size: 24px;
+          margin-bottom: 10px;
+      }
+
+      h1 span {
+          color: #76B900; /* Green color for 'vista-3d' */
+      }
+
+      .tags {
+          margin: 10px 0 0 0;
+      }
+
+      .tag {
+          background-color: lightblue;
+          border-radius: 10px;
+          padding: 5px 15px;
+          font-size: 12px;
+          margin-right: 10px;
+          display: inline-block;
+          color: black;
+      }
+
+      p {
+          font-size: 14px;
+          line-height: 1.5;
+      }
+
+      .box {
+          border: 1px solid lightgray;
+      }
+
+      .mytable {
+          border: 0;
+          border-spacing: 0;
+          padding: 0;
+          font-family: monospace;
+      }
+
+      #runNIM {
+          float: right;
+          background-color: #76b900; /* Green background */
+          color: black; /* White text */
+          padding: 10px 20px; /* Padding for the button */
+          border: none; /* No border */
+          border-radius: 5px; /* Rounded corners */
+          cursor: pointer; /* Pointer cursor on hover */
+          font-size: 14px; /* Larger font size for better readability */
+      }
+
+      .ba {
+          font-family: arial, sans-serif;
+          font-size: small;
+          color: darkgreen;
+      }
+
+      .ba:visited {
+          color: darkgreen;
+      }
+
+      .ba:hover {
+          color: darkgreen;
+      }
+
+      .ba:active {
+          color: darkgreen;
+      }
+  </style>
+</head>
+<body>
+<div id="demo-title-container">
+  <div class="card">
+    <h1><span>NVIDIA</span> / VISTA-3D NIM</h1>
+    <p>VISTA-3D is a specialized interactive foundation model for 3D medical imaging. It excels in providing accurate
+      and adaptable segmentation analysis across anatomies and modalities. Utilizing a multi-head architecture, VISTA-3D
+      adapts to varying conditions and anatomical areas, helping guide users' annotation workflow. This model is for
+      research purposes and not for clinical usage.
+    </p>
+    <div class="tags">
+      <span class="tag">image segmentation</span>
+      <span class="tag">interactive annotation</span>
+      <span class="tag">medical imaging</span>
     </div>
-    <div id="demo-description-container">
-      <p id="demo-description">
-        <!-- Insert demo title here during demo -->
-      </p>
-    </div>
-    <div id="demo-toolbar">
-      <!-- Insert buttons/dropdowns/etc here during demo -->
-    </div>
-    <div id="content"></div>
-  </body>
+  </div>
+</div>
+<br />
+<div class="row" style="margin: 5px">
+  <div class="col-md-4 card2">
+    <form action="javascript:void(0);">
+      <div class="form-group">
+        <label for="imageURI">Image URI</label>
+        <input type="url" class="form-control" id="imageURI" value="https://assets.ngc.nvidia.com/products/api-catalog/vista3d/example-1.nii.gz">
+        <button class="btn-xs" style="width: 100%" id="loadImage">Load...</button>
+      </div>
+      <hr />
+      <div class="form-group">
+        <label for="nimsURI">NIMS Endpoint</label>
+        <input type="url" class="form-control" id="nimsURI" value="https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d">
+      </div>
+      <div class="form-group">
+        <label for="nimsAuthHeader">Auth Header</label>
+        <input type="text" class="form-control" id="nimsAuthHeader" value="" placeholder="Bearer <api_key>">
+      </div>
+      <div class="form-group">
+        <label for="nimsOtherHeaders">Extra Headers</label>
+        <textarea class="form-control" id="nimsOtherHeaders" placeholder="{}"></textarea>
+      </div>
+      <hr />
+    </form>
+    <table class="mytable">
+      <tr>
+        <td style="width: 50%">
+          <div class="form-group">
+            <label for="labelPrompts">Class Prompts</label>
+            <select class="form-control" id="labelPrompts" multiple style="height: 200px;">
+              <option value="liver">liver</option>
+              <option value="kidney">kidney</option>
+              <option value="spleen">spleen</option>
+              <option value="pancreas">pancreas</option>
+              <option value="right kidney">right kidney</option>
+              <option value="aorta">aorta</option>
+              <option value="inferior vena cava">inferior vena cava</option>
+              <option value="right adrenal gland">right adrenal gland</option>
+              <option value="left adrenal gland">left adrenal gland</option>
+              <option value="gallbladder">gallbladder</option>
+              <option value="esophagus">esophagus</option>
+              <option value="stomach">stomach</option>
+              <option value="duodenum">duodenum</option>
+              <option value="left kidney">left kidney</option>
+              <option value="bladder">bladder</option>
+              <option value="portal vein and splenic vein">portal vein and splenic vein</option>
+              <option value="small bowel">small bowel</option>
+              <option value="lung">lung</option>
+              <option value="bone">bone</option>
+              <option value="brain">brain</option>
+              <option value="lung tumor">lung tumor</option>
+              <option value="pancreatic tumor">pancreatic tumor</option>
+              <option value="hepatic vessel">hepatic vessel</option>
+              <option value="hepatic tumor">hepatic tumor</option>
+              <option value="colon cancer primaries">colon cancer primaries</option>
+              <option value="left lung upper lobe">left lung upper lobe</option>
+              <option value="left lung lower lobe">left lung lower lobe</option>
+              <option value="right lung upper lobe">right lung upper lobe</option>
+              <option value="right lung middle lobe">right lung middle lobe</option>
+              <option value="right lung lower lobe">right lung lower lobe</option>
+              <option value="vertebrae L5">vertebrae L5</option>
+              <option value="vertebrae L4">vertebrae L4</option>
+              <option value="vertebrae L3">vertebrae L3</option>
+              <option value="vertebrae L2">vertebrae L2</option>
+              <option value="vertebrae L1">vertebrae L1</option>
+              <option value="vertebrae T12">vertebrae T12</option>
+              <option value="vertebrae T11">vertebrae T11</option>
+              <option value="vertebrae T10">vertebrae T10</option>
+              <option value="vertebrae T9">vertebrae T9</option>
+              <option value="vertebrae T8">vertebrae T8</option>
+              <option value="vertebrae T7">vertebrae T7</option>
+              <option value="vertebrae T6">vertebrae T6</option>
+              <option value="vertebrae T5">vertebrae T5</option>
+              <option value="vertebrae T4">vertebrae T4</option>
+              <option value="vertebrae T3">vertebrae T3</option>
+              <option value="vertebrae T2">vertebrae T2</option>
+              <option value="vertebrae T1">vertebrae T1</option>
+              <option value="vertebrae C7">vertebrae C7</option>
+              <option value="vertebrae C6">vertebrae C6</option>
+              <option value="vertebrae C5">vertebrae C5</option>
+              <option value="vertebrae C4">vertebrae C4</option>
+              <option value="vertebrae C3">vertebrae C3</option>
+              <option value="vertebrae C2">vertebrae C2</option>
+              <option value="vertebrae C1">vertebrae C1</option>
+              <option value="trachea">trachea</option>
+              <option value="left iliac artery">left iliac artery</option>
+              <option value="right iliac artery">right iliac artery</option>
+              <option value="left iliac vena">left iliac vena</option>
+              <option value="right iliac vena">right iliac vena</option>
+              <option value="colon">colon</option>
+              <option value="left rib 1">left rib 1</option>
+              <option value="left rib 2">left rib 2</option>
+              <option value="left rib 3">left rib 3</option>
+              <option value="left rib 4">left rib 4</option>
+              <option value="left rib 5">left rib 5</option>
+              <option value="left rib 6">left rib 6</option>
+              <option value="left rib 7">left rib 7</option>
+              <option value="left rib 8">left rib 8</option>
+              <option value="left rib 9">left rib 9</option>
+              <option value="left rib 10">left rib 10</option>
+              <option value="left rib 11">left rib 11</option>
+              <option value="left rib 12">left rib 12</option>
+              <option value="right rib 1">right rib 1</option>
+              <option value="right rib 2">right rib 2</option>
+              <option value="right rib 3">right rib 3</option>
+              <option value="right rib 4">right rib 4</option>
+              <option value="right rib 5">right rib 5</option>
+              <option value="right rib 6">right rib 6</option>
+              <option value="right rib 7">right rib 7</option>
+              <option value="right rib 8">right rib 8</option>
+              <option value="right rib 9">right rib 9</option>
+              <option value="right rib 10">right rib 10</option>
+              <option value="right rib 11">right rib 11</option>
+              <option value="right rib 12">right rib 12</option>
+              <option value="left humerus">left humerus</option>
+              <option value="right humerus">right humerus</option>
+              <option value="left scapula">left scapula</option>
+              <option value="right scapula">right scapula</option>
+              <option value="left clavicula">left clavicula</option>
+              <option value="right clavicula">right clavicula</option>
+              <option value="left femur">left femur</option>
+              <option value="right femur">right femur</option>
+              <option value="left hip">left hip</option>
+              <option value="right hip">right hip</option>
+              <option value="sacrum">sacrum</option>
+              <option value="left gluteus maximus">left gluteus maximus</option>
+              <option value="right gluteus maximus">right gluteus maximus</option>
+              <option value="left gluteus medius">left gluteus medius</option>
+              <option value="right gluteus medius">right gluteus medius</option>
+              <option value="left gluteus minimus">left gluteus minimus</option>
+              <option value="right gluteus minimus">right gluteus minimus</option>
+              <option value="left autochthon">left autochthon</option>
+              <option value="right autochthon">right autochthon</option>
+              <option value="left iliopsoas">left iliopsoas</option>
+              <option value="right iliopsoas">right iliopsoas</option>
+              <option value="left atrial appendage">left atrial appendage</option>
+              <option value="brachiocephalic trunk">brachiocephalic trunk</option>
+              <option value="left brachiocephalic vein">left brachiocephalic vein</option>
+              <option value="right brachiocephalic vein">right brachiocephalic vein</option>
+              <option value="left common carotid artery">left common carotid artery</option>
+              <option value="right common carotid artery">right common carotid artery</option>
+              <option value="costal cartilages">costal cartilages</option>
+              <option value="heart">heart</option>
+              <option value="left kidney cyst">left kidney cyst</option>
+              <option value="right kidney cyst">right kidney cyst</option>
+              <option value="prostate">prostate</option>
+              <option value="pulmonary vein">pulmonary vein</option>
+              <option value="skull">skull</option>
+              <option value="spinal cord">spinal cord</option>
+              <option value="sternum">sternum</option>
+              <option value="left subclavian artery">left subclavian artery</option>
+              <option value="right subclavian artery">right subclavian artery</option>
+              <option value="superior vena cava">superior vena cava</option>
+              <option value="thyroid gland">thyroid gland</option>
+              <option value="vertebrae S1">vertebrae S1</option>
+              <option value="bone lesion">bone lesion</option>
+              <option value="airway">airway</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Select By Anatomies</label><br />
+            <table class="mytable">
+              <tr>
+                <td><input class="radio-inline" id="labelOrgans" type="radio" name="example"
+                           onclick="onOrgansClickBtn()"> Organs
+                </td>
+                <td>&nbsp;</td>
+                <td><input class="radio-inline" id="labelLungs" type="radio" name="example" onclick="onLungsClickBtn()">
+                  Lung/Heart
+                </td>
+              </tr>
+              <tr>
+                <td><input class="radio-inline" id="labelVascular" type="radio" name="example"
+                           onclick="onVascularClickBtn()"> Vascular
+                </td>
+                <td>&nbsp;</td>
+                <td><input class="radio-inline" id="labelBones" type="radio" name="example" onclick="onBonesClickBtn()">
+                  Bones
+                </td>
+              </tr>
+              <tr>
+                <td><input class="radio-inline" id="labelMuscles" type="radio" name="example"
+                           onclick="onMusclesClickBtn()"> Muscles
+                </td>
+                <td>&nbsp;</td>
+                <td><input class="radio-inline" id="labelNone" type="radio" name="example" onclick="onNoneClickBtn()">
+                  None
+                </td>
+              </tr>
+            </table>
+          </div>
+        </td>
+        <td style="width: 10%">&nbsp;</td>
+        <td style="width: 40%; vertical-align: top">
+          <div class="form-group">
+            <label for="clickPrompts">Click Prompts</label>
+            <select class="form-control" id="clickPrompts">
+              <option value="">-- select --</option>
+              <option value="liver">liver</option>
+              <option value="kidney">kidney</option>
+              <option value="spleen">spleen</option>
+              <option value="pancreas">pancreas</option>
+              <option value="right kidney">right kidney</option>
+              <option value="aorta">aorta</option>
+              <option value="inferior vena cava">inferior vena cava</option>
+              <option value="right adrenal gland">right adrenal gland</option>
+              <option value="left adrenal gland">left adrenal gland</option>
+              <option value="gallbladder">gallbladder</option>
+              <option value="esophagus">esophagus</option>
+              <option value="stomach">stomach</option>
+              <option value="duodenum">duodenum</option>
+              <option value="left kidney">left kidney</option>
+              <option value="bladder">bladder</option>
+              <option value="portal vein and splenic vein">portal vein and splenic vein</option>
+              <option value="small bowel">small bowel</option>
+              <option value="lung">lung</option>
+              <option value="bone">bone</option>
+              <option value="brain">brain</option>
+              <option value="lung tumor">lung tumor</option>
+              <option value="pancreatic tumor">pancreatic tumor</option>
+              <option value="hepatic vessel">hepatic vessel</option>
+              <option value="hepatic tumor">hepatic tumor</option>
+              <option value="colon cancer primaries">colon cancer primaries</option>
+              <option value="left lung upper lobe">left lung upper lobe</option>
+              <option value="left lung lower lobe">left lung lower lobe</option>
+              <option value="right lung upper lobe">right lung upper lobe</option>
+              <option value="right lung middle lobe">right lung middle lobe</option>
+              <option value="right lung lower lobe">right lung lower lobe</option>
+              <option value="vertebrae L5">vertebrae L5</option>
+              <option value="vertebrae L4">vertebrae L4</option>
+              <option value="vertebrae L3">vertebrae L3</option>
+              <option value="vertebrae L2">vertebrae L2</option>
+              <option value="vertebrae L1">vertebrae L1</option>
+              <option value="vertebrae T12">vertebrae T12</option>
+              <option value="vertebrae T11">vertebrae T11</option>
+              <option value="vertebrae T10">vertebrae T10</option>
+              <option value="vertebrae T9">vertebrae T9</option>
+              <option value="vertebrae T8">vertebrae T8</option>
+              <option value="vertebrae T7">vertebrae T7</option>
+              <option value="vertebrae T6">vertebrae T6</option>
+              <option value="vertebrae T5">vertebrae T5</option>
+              <option value="vertebrae T4">vertebrae T4</option>
+              <option value="vertebrae T3">vertebrae T3</option>
+              <option value="vertebrae T2">vertebrae T2</option>
+              <option value="vertebrae T1">vertebrae T1</option>
+              <option value="vertebrae C7">vertebrae C7</option>
+              <option value="vertebrae C6">vertebrae C6</option>
+              <option value="vertebrae C5">vertebrae C5</option>
+              <option value="vertebrae C4">vertebrae C4</option>
+              <option value="vertebrae C3">vertebrae C3</option>
+              <option value="vertebrae C2">vertebrae C2</option>
+              <option value="vertebrae C1">vertebrae C1</option>
+              <option value="trachea">trachea</option>
+              <option value="left iliac artery">left iliac artery</option>
+              <option value="right iliac artery">right iliac artery</option>
+              <option value="left iliac vena">left iliac vena</option>
+              <option value="right iliac vena">right iliac vena</option>
+              <option value="colon">colon</option>
+              <option value="left rib 1">left rib 1</option>
+              <option value="left rib 2">left rib 2</option>
+              <option value="left rib 3">left rib 3</option>
+              <option value="left rib 4">left rib 4</option>
+              <option value="left rib 5">left rib 5</option>
+              <option value="left rib 6">left rib 6</option>
+              <option value="left rib 7">left rib 7</option>
+              <option value="left rib 8">left rib 8</option>
+              <option value="left rib 9">left rib 9</option>
+              <option value="left rib 10">left rib 10</option>
+              <option value="left rib 11">left rib 11</option>
+              <option value="left rib 12">left rib 12</option>
+              <option value="right rib 1">right rib 1</option>
+              <option value="right rib 2">right rib 2</option>
+              <option value="right rib 3">right rib 3</option>
+              <option value="right rib 4">right rib 4</option>
+              <option value="right rib 5">right rib 5</option>
+              <option value="right rib 6">right rib 6</option>
+              <option value="right rib 7">right rib 7</option>
+              <option value="right rib 8">right rib 8</option>
+              <option value="right rib 9">right rib 9</option>
+              <option value="right rib 10">right rib 10</option>
+              <option value="right rib 11">right rib 11</option>
+              <option value="right rib 12">right rib 12</option>
+              <option value="left humerus">left humerus</option>
+              <option value="right humerus">right humerus</option>
+              <option value="left scapula">left scapula</option>
+              <option value="right scapula">right scapula</option>
+              <option value="left clavicula">left clavicula</option>
+              <option value="right clavicula">right clavicula</option>
+              <option value="left femur">left femur</option>
+              <option value="right femur">right femur</option>
+              <option value="left hip">left hip</option>
+              <option value="right hip">right hip</option>
+              <option value="sacrum">sacrum</option>
+              <option value="left gluteus maximus">left gluteus maximus</option>
+              <option value="right gluteus maximus">right gluteus maximus</option>
+              <option value="left gluteus medius">left gluteus medius</option>
+              <option value="right gluteus medius">right gluteus medius</option>
+              <option value="left gluteus minimus">left gluteus minimus</option>
+              <option value="right gluteus minimus">right gluteus minimus</option>
+              <option value="left autochthon">left autochthon</option>
+              <option value="right autochthon">right autochthon</option>
+              <option value="left iliopsoas">left iliopsoas</option>
+              <option value="right iliopsoas">right iliopsoas</option>
+              <option value="left atrial appendage">left atrial appendage</option>
+              <option value="brachiocephalic trunk">brachiocephalic trunk</option>
+              <option value="left brachiocephalic vein">left brachiocephalic vein</option>
+              <option value="right brachiocephalic vein">right brachiocephalic vein</option>
+              <option value="left common carotid artery">left common carotid artery</option>
+              <option value="right common carotid artery">right common carotid artery</option>
+              <option value="costal cartilages">costal cartilages</option>
+              <option value="heart">heart</option>
+              <option value="left kidney cyst">left kidney cyst</option>
+              <option value="right kidney cyst">right kidney cyst</option>
+              <option value="prostate">prostate</option>
+              <option value="pulmonary vein">pulmonary vein</option>
+              <option value="skull">skull</option>
+              <option value="spinal cord">spinal cord</option>
+              <option value="sternum">sternum</option>
+              <option value="left subclavian artery">left subclavian artery</option>
+              <option value="right subclavian artery">right subclavian artery</option>
+              <option value="superior vena cava">superior vena cava</option>
+              <option value="thyroid gland">thyroid gland</option>
+              <option value="vertebrae S1">vertebrae S1</option>
+              <option value="bone lesion">bone lesion</option>
+              <option value="airway">airway</option>
+            </select>
+            <br />
+            <span style="float: right">
+                <a class="ba" id="clearClickSel" href="javascript:void(0);" style="color: gray">None</a> |
+                <a class="ba" id="clearClicks" href="javascript:void(0);" style="color: gray">Clear</a> |
+                <a class="ba" id="clearAllClicks" href="javascript:void(0);">Clear All</a>
+                </span>
+          </div>
+        </td>
+      </tr>
+    </table>
+    <button style="float: right" id="runNIM">Run NIM</button>
+  </div>
+  <div class="col-md-8">
+    <progress class="progress-bar" max="100" style="width: 1200px; height: 4px; margin-bottom: 1px;"></progress>
+    <table class="mytable">
+      <tr>
+        <td rowspan="2" class="box">
+          <span style="color: darkgray; padding-left: 5px;" id="l_element1"></span>
+          <div id="element1" oncontextmenu="return false" style="height: 800px; width: 800px;"></div>
+        </td>
+        <td class="box">
+          <span style="color: darkgray; padding-left: 5px;" id="l_element2"></span>
+          <div id="element2" oncontextmenu="return false" style="height: 400px; width: 400px;"></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="box">
+          <span style="color: darkgray; padding-left: 5px;" id="l_element3"></span>
+          <div id="element3" oncontextmenu="return false" style="height: 400px; width: 400px;"></div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+</body>
+<script>
+  function updateOrganSelection(selectValues) {
+    // console.log(selectValues);
+    const element = document.getElementById('labelPrompts');
+    for (let i = 0; i < element.options.length; i++) {
+      element.options[i].selected =
+        selectValues.indexOf(element.options[i].value) >= 0;
+    }
+
+    document.getElementById('clickPrompts').selectedIndex = 0;
+    document.getElementById('clickPrompts').dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function onOrgansClickBtn() {
+    const selected_organs_indx = [
+      'liver',
+      'bladder',
+      'colon',
+      'dudenum',
+      'esphagus',
+      'gallbladder',
+      'spleen',
+      'pancreas',
+      'right kidney',
+      'right adrenal gland',
+      'left adrenal gland',
+      'stomach',
+      'left kidney',
+      'bladder',
+      'prostate or uterus',
+      'rectum',
+      'small bowel',
+    ];
+    updateOrganSelection(selected_organs_indx);
+  }
+
+  function onVascularClickBtn() {
+    const selected_organs_indx = [
+      'aorta',
+      'inferior vena cava',
+      'portal vein and splenic vein',
+      'hepatic vessel',
+      'pulmonary artery',
+      'left iliac artery',
+      'right iliac artery',
+      'left iliac vena',
+      'right iliac vena',
+    ];
+    updateOrganSelection(selected_organs_indx);
+  }
+
+  function onBonesClickBtn() {
+    const selected_organs_indx = [
+      'vertebrae l5',
+      'vertebrae l4',
+      'vertebrae l3',
+      'vertebrae l2',
+      'vertebrae l1',
+      'vertebrae t12',
+      'vertebrae t11',
+      'vertebrae t10',
+      'vertebrae t9',
+      'vertebrae t8',
+      'vertebrae t7',
+      'vertebrae t6',
+      'vertebrae t5',
+      'vertebrae t4',
+      'vertebrae t3',
+      'vertebrae t2',
+      'vertebrae t1',
+      'vertebrae c7',
+      'vertebrae c6',
+      'vertebrae c5',
+      'vertebrae c4',
+      'vertebrae c3',
+      'vertebrae c2',
+      'vertebrae c1',
+      'left rib 1',
+      'left rib 2',
+      'left rib 3',
+      'left rib 4',
+      'left rib 5',
+      'left rib 6',
+      'left rib 7',
+      'left rib 8',
+      'left rib 9',
+      'left rib 10',
+      'left rib 11',
+      'left rib 12',
+      'right rib 1',
+      'right rib 2',
+      'right rib 3',
+      'right rib 4',
+      'right rib 5',
+      'right rib 6',
+      'right rib 7',
+      'right rib 8',
+      'right rib 9',
+      'right rib 10',
+      'right rib 11',
+      'right rib 12',
+      'left humerus',
+      'right humerus',
+      'left scapula',
+      'right scapula',
+      'left clavicula',
+      'right clavicula',
+      'left femur',
+      'right femur',
+      'left hip',
+      'right hip',
+      'sacrum',
+    ];
+    updateOrganSelection(selected_organs_indx);
+  }
+
+  function onLungsClickBtn() {
+    const selected_organs_indx = [
+      'left lung upper lobe',
+      'left lung lower lobe',
+      'right lung upper lobe',
+      'right lung middle lobe',
+      'right lung lower lobe',
+      'trachea',
+      'heart',
+      'heart myocardium',
+      'left heart atrium',
+      'left heart ventricle',
+      'right heart atrium',
+      'right heart ventricle',
+    ];
+    updateOrganSelection(selected_organs_indx);
+  }
+
+  function onMusclesClickBtn() {
+    const selected_organs_indx = [
+      'left gluteus maximus',
+      'right gluteus maximus',
+      'left gluteus medius',
+      'right gluteus medius',
+      'left gluteus minimus',
+      'right gluteus minimus',
+      'left autochthon',
+      'right autochthon',
+      'left iliopsoas',
+      'left iliopsoas',
+    ];
+    updateOrganSelection(selected_organs_indx);
+  }
+
+  function onNoneClickBtn() {
+    updateOrganSelection([]);
+  }
+</script>
 </html>
