@@ -107,6 +107,13 @@ function reset() {
   segmentation.state.removeSegmentation(segmentationId);
   ToolGroupManager.destroyToolGroup(toolGroupId);
   renderingEngine = null;
+
+  currnetLabelForClickPoints = '';
+  labelToClickPoints.clear();
+  autoRunLabels.clear();
+
+  document.getElementById('clickPrompts').selectize.setValue('');
+  document.getElementById('annotatedLabels').innerHTML = '';
 }
 
 document.getElementById('runNIM').onclick = async () => {
@@ -115,8 +122,18 @@ document.getElementById('runNIM').onclick = async () => {
 
 async function onRunNIM() {
   document.getElementById('runNIM').disabled = true;
+  document.getElementById('imageURI').readOnly = true;
+  document.getElementById('loadImage').disabled = true;
+  document.getElementById('clickPrompts').selectize.disable();
+  document.getElementById('runStatus').style.display = 'block';
+
   await fillVolumeSegmentationWithLabelData();
+
   document.getElementById('runNIM').disabled = false;
+  document.getElementById('imageURI').readOnly = false;
+  document.getElementById('loadImage').disabled = false;
+  document.getElementById('clickPrompts').selectize.enable();
+  document.getElementById('runStatus').style.display = 'none';
 }
 
 document.getElementById('loadImage').onclick = async () => {
@@ -143,15 +160,20 @@ document.getElementById('clearClicks').onclick = async () => {
 };
 
 document.getElementById('clearAllClicks').onclick = async () => {
+  await onClearAllClicks();
+};
+
+async function onClearAllClicks() {
   console.log('clear all click points...');
   cornerstoneTools.annotation.state
     .getAnnotationManager()
     .removeAllAnnotations();
 
+  currnetLabelForClickPoints = '';
   labelToClickPoints.clear();
-  document.getElementById('clickPrompts').selectedIndex = 0;
+  document.getElementById('clickPrompts').selectize.setValue('');
   await onSelectClickLabel();
-};
+}
 
 async function onSelectClickLabel() {
   const label = document.getElementById('clickPrompts').value;
@@ -169,7 +191,7 @@ async function onSelectClickLabel() {
     return;
   } else {
     const annotations = manager.saveAnnotations(null, 'ProbeMONAITool');
-    labelToClickPoints[currnetLabelForClickPoints] = annotations;
+    labelToClickPoints.set(currnetLabelForClickPoints, annotations);
     cornerstoneTools.annotation.state
       .getAnnotationManager()
       .removeAllAnnotations();
@@ -183,12 +205,12 @@ async function onSelectClickLabel() {
 
   currnetLabelForClickPoints = label;
   const annotations = labelToClickPoints[label];
-  if (annotations) {
+  if (labelToClickPoints.has(label) && annotations) {
     console.log('Restoring previous annotations for', label, annotations);
     manager.restoreAnnotations(annotations, null, 'ProbeMONAITool');
     renderingEngine?.render();
-  } else {
-    // console.log('No prev annotations found for', label);
+  } else if (label !== '') {
+    console.log('No prev annotations found for', label);
     // if (document.getElementById('autoRunChecked').checked) {
     if (!autoRunLabels.has(label)) {
       autoRunLabels.set(label, true);

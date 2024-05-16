@@ -36,9 +36,6 @@ export default class ProbeMONAITool extends ProbeTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
-    const renderingEngine = viewport.getRenderingEngine();
-
     const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
       toolName: this.getToolName(),

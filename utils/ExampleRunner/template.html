@@ -8,6 +8,25 @@
         integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
         rel="stylesheet">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"
+          integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
+          crossorigin="anonymous"></script>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/css/selectize.default.min.css"
+    integrity="sha512-pTaEn+6gF1IeWv3W1+7X7eM60TFu/agjgoHmYhAfLEU8Phuf6JKiiE8YmsNC0aCgQv4192s4Vai8YZ6VNM6vyQ=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/js/selectize.min.js"
+    integrity="sha512-IOebNkvA/HZjMM7MxL0NYeLYEalloZ8ckak+NDtOViP7oiYzG5vn6WVXyrJDiJPhl4yRdmNAG49iuLmhkUdVsQ=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
   <style>
       body {
           background-color: #111827;
@@ -158,14 +177,14 @@
 </div>
 <br />
 <div class="row" style="margin: 5px">
-  <div class="col-md-3 card2" style="height: 850px">
+  <div class="col-md-3 card2" style="height: 830px">
     <form action="javascript:void(0);">
       <div class="form-group">
         <label for="imageURI">Image URI</label>
         <!--        <input type="url" class="form-control" id="imageURI" value="http://10.117.3.221:3001/example-1.nii.gz">-->
         <input type="url" class="form-control" id="imageURI"
                value="https://assets.ngc.nvidia.com/products/api-catalog/vista3d/example-1.nii.gz">
-        <button class="btn-xs" style="width: 100%" id="loadImage">Load...</button>
+        <button class="btn-xs" style="width: 100%" id="loadImage">Load Image</button>
       </div>
       <hr />
       <div class="form-group">
@@ -185,10 +204,10 @@
         <td style="vertical-align: top;">
           <div class="form-group">
             <label for="clickPrompts">Labels</label>
-            <select class="form-control" id="clickPrompts">
+            <select id="clickPrompts">
               <option value="">-- select --</option>
               <option value="liver">liver</option>
-              <option value="kidney">kidney</option>
+              <!--              <option value="kidney">kidney</option>-->
               <option value="spleen">spleen</option>
               <option value="pancreas">pancreas</option>
               <option value="right kidney">right kidney</option>
@@ -204,8 +223,8 @@
               <option value="bladder">bladder</option>
               <option value="portal vein and splenic vein">portal vein and splenic vein</option>
               <option value="small bowel">small bowel</option>
-              <option value="lung">lung</option>
-              <option value="bone">bone</option>
+              <!--              <option value="lung">lung</option>-->
+              <!--              <option value="bone">bone</option>-->
               <option value="brain">brain</option>
               <option value="lung tumor">lung tumor</option>
               <option value="pancreatic tumor">pancreatic tumor</option>
@@ -316,7 +335,7 @@
               <option value="airway">airway</option>
             </select>
             <br />
-            <span style="float: right; font-size: smaller; font-family: sans-serif;">Click Points:&nbsp;&nbsp;
+            <span style="float: right; font-size: smaller; font-family: sans-serif;">Click Prompts:&nbsp;&nbsp;
                 <a class="ba" id="clearClicks" href="javascript:void(0);" style="color: gray">Clear</a> |
                 <a class="ba" id="clearAllClicks" href="javascript:void(0);">Clear All</a>
                 </span>
@@ -334,6 +353,12 @@
         </td>
       </tr>
       <tr>
+        <td style="text-align: center">
+          <br />
+          <p class="bg-warning" id="runStatus" style="display: none">Please wait while running NIM...</p>
+        </td>
+      </tr>
+      <tr>
         <td>
           <div class="tags" id="annotatedLabels">
           </div>
@@ -342,26 +367,29 @@
     </table>
   </div>
   <div class="col-md-9">
-    <progress class="progress-bar" max="100" style="width: 1200px; height: 4px; margin-bottom: 1px;"></progress>
+    <progress class="progress-bar" max="100" style="width: 1170px; height: 4px; margin-bottom: 1px;"></progress>
     <table class="mytable">
       <tr>
         <td rowspan="2" class="box">
           <span style="color: darkgray; padding-left: 5px;" id="l_element1"></span>
-          <div id="element1" oncontextmenu="return false" style="height: 800px; width: 800px;"></div>
+          <div id="element1" oncontextmenu="return false" style="height: 780px; width: 780px;"></div>
         </td>
         <td class="box">
           <span style="color: darkgray; padding-left: 5px;" id="l_element2"></span>
-          <div id="element2" oncontextmenu="return false" style="height: 400px; width: 400px;"></div>
+          <div id="element2" oncontextmenu="return false" style="height: 390px; width: 390px;"></div>
         </td>
       </tr>
       <tr>
         <td class="box">
           <span style="color: darkgray; padding-left: 5px;" id="l_element3"></span>
-          <div id="element3" oncontextmenu="return false" style="height: 400px; width: 400px;"></div>
+          <div id="element3" oncontextmenu="return false" style="height: 390px; width: 390px;"></div>
         </td>
       </tr>
     </table>
   </div>
 </div>
+<script>
+  $('#clickPrompts').selectize();
+</script>
 </body>
 </html>
