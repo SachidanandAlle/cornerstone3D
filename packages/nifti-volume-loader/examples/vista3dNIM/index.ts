@@ -40,6 +40,7 @@ const viewportId3 = 'CT_NIFTI_CORONAL';
 const segmentationId = 'SEG_NIFTI_ID';
 const labelToClickPoints = new Map();
 let currnetLabelForClickPoints = '';
+const autoRunLabels = new Map();
 
 const renderingEngineId = 'myRenderingEngine';
 let renderingEngine;
@@ -109,10 +110,14 @@ function reset() {
 }
 
 document.getElementById('runNIM').onclick = async () => {
+  await onRunNIM();
+};
+
+async function onRunNIM() {
   document.getElementById('runNIM').disabled = true;
   await fillVolumeSegmentationWithLabelData();
   document.getElementById('runNIM').disabled = false;
-};
+}
 
 document.getElementById('loadImage').onclick = async () => {
   reset();
@@ -120,11 +125,6 @@ document.getElementById('loadImage').onclick = async () => {
 };
 
 document.getElementById('clickPrompts').onchange = async () => {
-  await onSelectClickLabel();
-};
-
-document.getElementById('clearClickSel').onclick = async () => {
-  document.getElementById('clickPrompts').selectedIndex = 0;
   await onSelectClickLabel();
 };
 
@@ -160,8 +160,8 @@ async function onSelectClickLabel() {
 
   document.getElementById('clearClicks').style.color =
     label === '' ? 'gray' : 'darkgreen';
-  document.getElementById('clearClickSel').style.color =
-    label === '' ? 'gray' : 'darkgreen';
+
+  document.getElementById('runNIM').disabled = label === '';
 
   const manager = cornerstoneTools.annotation.state.getAnnotationManager();
   if (label === currnetLabelForClickPoints) {
@@ -188,7 +188,12 @@ async function onSelectClickLabel() {
     manager.restoreAnnotations(annotations, null, 'ProbeMONAITool');
     renderingEngine?.render();
   } else {
-    console.log('No prev annotations found for', label);
+    // console.log('No prev annotations found for', label);
+    // if (document.getElementById('autoRunChecked').checked) {
+    if (!autoRunLabels.has(label)) {
+      autoRunLabels.set(label, true);
+      await onRunNIM();
+    }
   }
 
   const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -285,7 +290,6 @@ const updateProgress = (evt) => {
   element.value = progress;
 
   if (progress >= 100) {
-    document.getElementById('runNIM').disabled = false;
     document.getElementById('l_element1').innerText = 'Axial';
     document.getElementById('l_element2').innerText = 'Sagittal';
     document.getElementById('l_element3').innerText = 'Coronal';
@@ -323,13 +327,7 @@ async function fillVolumeSegmentationWithLabelData() {
   const imageURI = document.getElementById('imageURI').value;
   const nimsURI = document.getElementById('nimsURI').value;
   const authHeader = document.getElementById('nimsAuthHeader').value;
-  const pElement = document.getElementById('labelPrompts');
   const classPrompts = [];
-  for (let i = 0; i < pElement.options.length; i++) {
-    if (pElement.options[i].selected) {
-      classPrompts.push(pElement.options[i].value);
-    }
-  }
 
   const pointPrompts = getClickPoints();
   const nimReqData = {
@@ -338,13 +336,17 @@ async function fillVolumeSegmentationWithLabelData() {
   };
 
   const usingPointPrompts = Object.keys(pointPrompts).length > 0;
-  const current_class_id = usingPointPrompts
-    ? parseInt(
-        Object.keys(VISTA_LABELS).find(
-          (key) => VISTA_LABELS[key] === currnetLabelForClickPoints
+  const current_class_id =
+    currnetLabelForClickPoints !== ''
+      ? parseInt(
+          Object.keys(VISTA_LABELS).find(
+            (key) => VISTA_LABELS[key] === currnetLabelForClickPoints
+          )
         )
-      )
-    : 0;
+      : 0;
+  if (!usingPointPrompts) {
+    classPrompts.push(currnetLabelForClickPoints);
+  }
 
   if (usingPointPrompts) {
     nimReqData.prompts['points'] = pointPrompts;
@@ -384,14 +386,10 @@ async function fillVolumeSegmentationWithLabelData() {
       }
 
       for (let i = 0; i < scalarData.length; i++) {
-        if (usingPointPrompts) {
-          if (
-            scalarData[i] === current_class_id ||
-            nrrdfile.data[i] === current_class_id
-          ) {
-            scalarData[i] = nrrdfile.data[i];
-          }
-        } else {
+        if (
+          scalarData[i] === current_class_id ||
+          nrrdfile.data[i] === current_class_id
+        ) {
           scalarData[i] = nrrdfile.data[i];
         }
       }
@@ -428,6 +426,18 @@ async function fillVolumeSegmentationWithLabelData() {
     }
   }
   document.body.style.cursor = 'default';
+
+  let annotatedLabelsHeader = '';
+  let annotatedLabels = '';
+  for (const [key, value] of autoRunLabels.entries()) {
+    if (value) {
+      annotatedLabels += '<span class="labeltag">' + key + '</span>';
+      annotatedLabelsHeader =
+        '<label class="labelhead">Annotated labels</label><br/>';
+    }
+  }
+  document.getElementById('annotatedLabels').innerHTML =
+    annotatedLabelsHeader + annotatedLabels;
 }
 
 setup();
