@@ -27,6 +27,10 @@
     crossorigin="anonymous"
     referrerpolicy="no-referrer"
   ></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-tagsinput@0.7.1/dist/bootstrap-tagsinput.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-tagsinput@0.7.1/dist/bootstrap-tagsinput.min.css" rel="stylesheet">
+
   <style>
       body {
           background-color: #111827;
@@ -97,20 +101,40 @@
           color: black;
       }
 
-      .labeltag {
+      .tag_list_wrapper {
+          margin: 10px 0 0 0;
+          color: gray;
+          font-size: smaller;
+      }
+
+      .tag_head {
+          color: gray;
+          font-size: smaller;
+      }
+
+      .tag_list {
+          font-size: 12px;
+          display: inline-block;
+          vertical-align: top;
           background-color: lightgray;
           border-radius: 10px;
-          padding: 5px 15px;
-          font-size: 12px;
           margin-right: 10px;
           margin-bottom: 5px;
-          display: inline-block;
+          padding: 5px 20px;
+          position: relative;
           color: black;
       }
 
-      .labelhead {
-          color: gray;
-          font-size: smaller;
+      .tag_list.tag_list_hide {
+          display: none;
+      }
+
+      .tag_list span {
+          position: absolute;
+          right: 6px;
+          cursor: pointer;
+          color: white;
+          font-weight: bolder;
       }
 
       p {
@@ -157,6 +181,12 @@
       .ba:active {
           color: darkgreen;
       }
+
+      .bootstrap-tagsinput {
+          border: none;
+          box-shadow: none;
+      }
+
   </style>
 </head>
 <body>
@@ -360,7 +390,10 @@
       </tr>
       <tr>
         <td>
-          <div class="tags" id="annotatedLabels">
+          <div class="tag_head" id="annotatedTagsHead" style="display: none">
+            <span>Annotated Labels</span><br />
+            <div class="tag_list_wrapper" id="annotatedTags">
+            </div>
           </div>
         </td>
       </tr>

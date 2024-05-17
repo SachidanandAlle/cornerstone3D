@@ -129,3 +129,15 @@ export const VISTA_LABELS = {
   '128': 'bone lesion',
   '132': 'airway',
 };
+
+export function labelToIndex(label) {
+  return label !== ''
+    ? parseInt(
+        Object.keys(VISTA_LABELS).find((key) => VISTA_LABELS[key] === label)
+      )
+    : 0;
+}
+
+export function indexToLabel(idx) {
+  return VISTA_LABELS[idx + ''];
+}

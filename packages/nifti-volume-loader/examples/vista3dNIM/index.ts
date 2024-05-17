@@ -20,7 +20,12 @@ import * as nrrdjs from '@jonathanlurie/nrrdjs';
 
 import { setCtTransferFunctionForVolumeActor } from '../../../../utils/demo/helpers';
 import ProbeMONAITool from './ProbeTool';
-import { NIM_PROXY_URL, VISTA_LABELS } from './constants';
+import {
+  indexToLabel,
+  labelToIndex,
+  NIM_PROXY_URL,
+  VISTA_LABELS,
+} from './constants';
 import jsZip from 'jszip';
 
 const {
@@ -113,7 +118,8 @@ function reset() {
   autoRunLabels.clear();
 
   document.getElementById('clickPrompts').selectize.setValue('');
-  document.getElementById('annotatedLabels').innerHTML = '';
+  document.getElementById('annotatedTags').innerHTML = '';
+  document.getElementById('annotatedTagsHead').style.display = 'none';
 }
 
 document.getElementById('runNIM').onclick = async () => {
@@ -146,6 +152,10 @@ document.getElementById('clickPrompts').onchange = async () => {
 };
 
 document.getElementById('clearClicks').onclick = async () => {
+  await onClearClicks();
+};
+
+async function onClearClicks() {
   const label = document.getElementById('clickPrompts').value;
   if (label === '') {
     return;
@@ -157,7 +167,7 @@ document.getElementById('clearClicks').onclick = async () => {
     .getAnnotationManager()
     .removeAllAnnotations();
   renderingEngine?.render();
-};
+}
 
 document.getElementById('clearAllClicks').onclick = async () => {
   await onClearAllClicks();
@@ -191,16 +201,19 @@ async function onSelectClickLabel() {
     return;
   } else {
     const annotations = manager.saveAnnotations(null, 'ProbeMONAITool');
-    labelToClickPoints.set(currnetLabelForClickPoints, annotations);
-    cornerstoneTools.annotation.state
-      .getAnnotationManager()
-      .removeAllAnnotations();
-    renderingEngine?.render();
-    console.log(
-      'Saving prev annotations for',
-      currnetLabelForClickPoints,
-      annotations
-    );
+    console.log('Annotations', annotations);
+    if (!$.isEmptyObject(annotations)) {
+      labelToClickPoints.set(currnetLabelForClickPoints, annotations);
+      cornerstoneTools.annotation.state
+        .getAnnotationManager()
+        .removeAllAnnotations();
+      renderingEngine?.render();
+      console.log(
+        'Saving prev annotations for',
+        currnetLabelForClickPoints,
+        annotations
+      );
+    }
   }
 
   currnetLabelForClickPoints = label;
@@ -213,7 +226,7 @@ async function onSelectClickLabel() {
     console.log('No prev annotations found for', label);
     // if (document.getElementById('autoRunChecked').checked) {
     if (!autoRunLabels.has(label)) {
-      autoRunLabels.set(label, true);
+      autoRunLabels.set(label, labelToIndex(label));
       await onRunNIM();
     }
   }
@@ -358,14 +371,7 @@ async function fillVolumeSegmentationWithLabelData() {
   };
 
   const usingPointPrompts = Object.keys(pointPrompts).length > 0;
-  const current_class_id =
-    currnetLabelForClickPoints !== ''
-      ? parseInt(
-          Object.keys(VISTA_LABELS).find(
-            (key) => VISTA_LABELS[key] === currnetLabelForClickPoints
-          )
-        )
-      : 0;
+  const current_class_id = labelToIndex(currnetLabelForClickPoints);
   if (!usingPointPrompts) {
     classPrompts.push(currnetLabelForClickPoints);
   }
@@ -448,18 +454,56 @@ async function fillVolumeSegmentationWithLabelData() {
     }
   }
   document.body.style.cursor = 'default';
+  const colorLUT = segmentation.state.getColorLUT(0);
+  console.log(colorLUT[1]);
 
-  let annotatedLabelsHeader = '';
-  let annotatedLabels = '';
+  document.getElementById('annotatedTagsHead').style.display = 'none';
+
+  let flag = false;
+  let tags = '';
   for (const [key, value] of autoRunLabels.entries()) {
     if (value) {
-      annotatedLabels += '<span class="labeltag">' + key + '</span>';
-      annotatedLabelsHeader =
-        '<label class="labelhead">Annotated labels</label><br/>';
+      if (!flag) {
+        document.getElementById('annotatedTagsHead').style.display = 'block';
+        flag = true;
+      }
+
+      const col = colorLUT[value];
+      tags +=
+        '<div class="tag_list" style="background-color: rgb(' +
+        col[0] +
+        ',' +
+        col[1] +
+        ',' +
+        col[2] +
+        ')" data-id=\'' +
+        value +
+        "'>" +
+        key +
+        '<span>x</span></div>';
     }
   }
-  document.getElementById('annotatedLabels').innerHTML =
-    annotatedLabelsHeader + annotatedLabels;
+
+  document.getElementById('annotatedTags').innerHTML = tags;
+  $('.tag_list').click(async function () {
+    const id = $(this).data('id');
+    $(this).addClass('tag_list_hide');
+
+    for (let i = 0; i < scalarData.length; i++) {
+      if (scalarData[i] === id) {
+        scalarData[i] = 0;
+      }
+    }
+    triggerEvent(eventTarget, csToolsEnums.Events.SEGMENTATION_DATA_MODIFIED, {
+      segmentationId: segmentationId,
+    });
+
+    await onClearClicks();
+    console.log(autoRunLabels);
+    autoRunLabels.delete(indexToLabel(id));
+    console.log(autoRunLabels);
+    document.getElementById('clickPrompts').selectize.setValue('');
+  });
 }
 
 setup();
