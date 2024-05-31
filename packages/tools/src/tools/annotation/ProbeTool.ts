@@ -141,9 +141,9 @@ class ProbeTool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
+  protected addNewAnnotation(
     evt: EventTypes.InteractionEventType
-  ): ProbeAnnotation => {
+  ): ProbeAnnotation {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -202,7 +202,7 @@ class ProbeTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
-  };
+  }
 
   /**
    * It checks if the mouse click is near ProveTool, it overwrites the baseAnnotationTool

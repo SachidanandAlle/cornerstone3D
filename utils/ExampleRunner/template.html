@@ -186,7 +186,6 @@
           border: none;
           box-shadow: none;
       }
-
   </style>
 </head>
 <body>
@@ -206,7 +205,7 @@
   </div>
 </div>
 <br />
-<div class="row" style="margin: 5px">
+<div id="content" class="row" style="margin: 5px">
   <div class="col-md-3 card2" style="height: 830px">
     <form action="javascript:void(0);">
       <div class="form-group">
@@ -216,7 +215,7 @@
                value="https://assets.ngc.nvidia.com/products/api-catalog/vista3d/example-1.nii.gz">
         <button class="btn-xs" style="width: 100%" id="loadImage">Load Image</button>
       </div>
-      <hr />
+      <hr>
       <div class="form-group">
         <label for="nimsURI">NIMS Endpoint</label>
         <!--        <input type="url" class="form-control" id="nimsURI" value="http://10.117.3.221:8008/vista3d/inference">-->
@@ -227,159 +226,31 @@
         <label for="nimsAuthHeader">Auth Header</label>
         <input type="text" class="form-control" id="nimsAuthHeader" value="" placeholder="Bearer <api_key>">
       </div>
-      <hr />
+      <hr>
     </form>
     <table class="mytable" style="width: 100%;">
+      <tbody>
       <tr>
         <td style="vertical-align: top;">
           <div class="form-group">
-            <label for="clickPrompts">Labels</label>
+            <label for="clickPrompts">Labels <a class="ba" href="javascript:void(0);" id="newLabelLink">Add
+              New</a></label>
             <select id="clickPrompts">
               <option value="">-- select --</option>
-              <option value="liver">liver</option>
-              <!--              <option value="kidney">kidney</option>-->
-              <option value="spleen">spleen</option>
-              <option value="pancreas">pancreas</option>
-              <option value="right kidney">right kidney</option>
-              <option value="aorta">aorta</option>
-              <option value="inferior vena cava">inferior vena cava</option>
-              <option value="right adrenal gland">right adrenal gland</option>
-              <option value="left adrenal gland">left adrenal gland</option>
-              <option value="gallbladder">gallbladder</option>
-              <option value="esophagus">esophagus</option>
-              <option value="stomach">stomach</option>
-              <option value="duodenum">duodenum</option>
-              <option value="left kidney">left kidney</option>
-              <option value="bladder">bladder</option>
-              <option value="portal vein and splenic vein">portal vein and splenic vein</option>
-              <option value="small bowel">small bowel</option>
-              <!--              <option value="lung">lung</option>-->
-              <!--              <option value="bone">bone</option>-->
-              <option value="brain">brain</option>
-              <option value="lung tumor">lung tumor</option>
-              <option value="pancreatic tumor">pancreatic tumor</option>
-              <option value="hepatic vessel">hepatic vessel</option>
-              <option value="hepatic tumor">hepatic tumor</option>
-              <option value="colon cancer primaries">colon cancer primaries</option>
-              <option value="left lung upper lobe">left lung upper lobe</option>
-              <option value="left lung lower lobe">left lung lower lobe</option>
-              <option value="right lung upper lobe">right lung upper lobe</option>
-              <option value="right lung middle lobe">right lung middle lobe</option>
-              <option value="right lung lower lobe">right lung lower lobe</option>
-              <option value="vertebrae L5">vertebrae L5</option>
-              <option value="vertebrae L4">vertebrae L4</option>
-              <option value="vertebrae L3">vertebrae L3</option>
-              <option value="vertebrae L2">vertebrae L2</option>
-              <option value="vertebrae L1">vertebrae L1</option>
-              <option value="vertebrae T12">vertebrae T12</option>
-              <option value="vertebrae T11">vertebrae T11</option>
-              <option value="vertebrae T10">vertebrae T10</option>
-              <option value="vertebrae T9">vertebrae T9</option>
-              <option value="vertebrae T8">vertebrae T8</option>
-              <option value="vertebrae T7">vertebrae T7</option>
-              <option value="vertebrae T6">vertebrae T6</option>
-              <option value="vertebrae T5">vertebrae T5</option>
-              <option value="vertebrae T4">vertebrae T4</option>
-              <option value="vertebrae T3">vertebrae T3</option>
-              <option value="vertebrae T2">vertebrae T2</option>
-              <option value="vertebrae T1">vertebrae T1</option>
-              <option value="vertebrae C7">vertebrae C7</option>
-              <option value="vertebrae C6">vertebrae C6</option>
-              <option value="vertebrae C5">vertebrae C5</option>
-              <option value="vertebrae C4">vertebrae C4</option>
-              <option value="vertebrae C3">vertebrae C3</option>
-              <option value="vertebrae C2">vertebrae C2</option>
-              <option value="vertebrae C1">vertebrae C1</option>
-              <option value="trachea">trachea</option>
-              <option value="left iliac artery">left iliac artery</option>
-              <option value="right iliac artery">right iliac artery</option>
-              <option value="left iliac vena">left iliac vena</option>
-              <option value="right iliac vena">right iliac vena</option>
-              <option value="colon">colon</option>
-              <option value="left rib 1">left rib 1</option>
-              <option value="left rib 2">left rib 2</option>
-              <option value="left rib 3">left rib 3</option>
-              <option value="left rib 4">left rib 4</option>
-              <option value="left rib 5">left rib 5</option>
-              <option value="left rib 6">left rib 6</option>
-              <option value="left rib 7">left rib 7</option>
-              <option value="left rib 8">left rib 8</option>
-              <option value="left rib 9">left rib 9</option>
-              <option value="left rib 10">left rib 10</option>
-              <option value="left rib 11">left rib 11</option>
-              <option value="left rib 12">left rib 12</option>
-              <option value="right rib 1">right rib 1</option>
-              <option value="right rib 2">right rib 2</option>
-              <option value="right rib 3">right rib 3</option>
-              <option value="right rib 4">right rib 4</option>
-              <option value="right rib 5">right rib 5</option>
-              <option value="right rib 6">right rib 6</option>
-              <option value="right rib 7">right rib 7</option>
-              <option value="right rib 8">right rib 8</option>
-              <option value="right rib 9">right rib 9</option>
-              <option value="right rib 10">right rib 10</option>
-              <option value="right rib 11">right rib 11</option>
-              <option value="right rib 12">right rib 12</option>
-              <option value="left humerus">left humerus</option>
-              <option value="right humerus">right humerus</option>
-              <option value="left scapula">left scapula</option>
-              <option value="right scapula">right scapula</option>
-              <option value="left clavicula">left clavicula</option>
-              <option value="right clavicula">right clavicula</option>
-              <option value="left femur">left femur</option>
-              <option value="right femur">right femur</option>
-              <option value="left hip">left hip</option>
-              <option value="right hip">right hip</option>
-              <option value="sacrum">sacrum</option>
-              <option value="left gluteus maximus">left gluteus maximus</option>
-              <option value="right gluteus maximus">right gluteus maximus</option>
-              <option value="left gluteus medius">left gluteus medius</option>
-              <option value="right gluteus medius">right gluteus medius</option>
-              <option value="left gluteus minimus">left gluteus minimus</option>
-              <option value="right gluteus minimus">right gluteus minimus</option>
-              <option value="left autochthon">left autochthon</option>
-              <option value="right autochthon">right autochthon</option>
-              <option value="left iliopsoas">left iliopsoas</option>
-              <option value="right iliopsoas">right iliopsoas</option>
-              <option value="left atrial appendage">left atrial appendage</option>
-              <option value="brachiocephalic trunk">brachiocephalic trunk</option>
-              <option value="left brachiocephalic vein">left brachiocephalic vein</option>
-              <option value="right brachiocephalic vein">right brachiocephalic vein</option>
-              <option value="left common carotid artery">left common carotid artery</option>
-              <option value="right common carotid artery">right common carotid artery</option>
-              <option value="costal cartilages">costal cartilages</option>
-              <option value="heart">heart</option>
-              <option value="left kidney cyst">left kidney cyst</option>
-              <option value="right kidney cyst">right kidney cyst</option>
-              <option value="prostate">prostate</option>
-              <option value="pulmonary vein">pulmonary vein</option>
-              <option value="skull">skull</option>
-              <option value="spinal cord">spinal cord</option>
-              <option value="sternum">sternum</option>
-              <option value="left subclavian artery">left subclavian artery</option>
-              <option value="right subclavian artery">right subclavian artery</option>
-              <option value="superior vena cava">superior vena cava</option>
-              <option value="thyroid gland">thyroid gland</option>
-              <option value="vertebrae S1">vertebrae S1</option>
-              <option value="bone lesion">bone lesion</option>
-              <option value="airway">airway</option>
             </select>
             <br />
+            <span style="font-size: smaller;font-family: sans-serif;color: darkgray;">Use Right click to add background points</span>
             <span style="float: right; font-size: smaller; font-family: sans-serif;">Click Prompts:&nbsp;&nbsp;
-                <a class="ba" id="clearClicks" href="javascript:void(0);" style="color: gray">Clear</a> |
-                <a class="ba" id="clearAllClicks" href="javascript:void(0);">Clear All</a>
-                </span>
+              <a class="ba" id="clearClicks" href="javascript:void(0);" style="color: gray">Clear</a> |
+              <a class="ba" id="clearAllClicks" href="javascript:void(0);">Clear All</a>
+            </span>
           </div>
         </td>
       </tr>
       <tr>
         <td style="float: right">
           <br />
-          <!--          <div class="form-check form-switch">-->
-          <!--            <input class="form-check-input" type="checkbox" id="autoRunChecked" checked>-->
-          <!--            <label class="form-check-label" for="autoRunChecked">Auto Run</label>-->
-          <!--          </div>-->
-          <button id="runNIM" disabled>Run NIM</button>
+          <button id="runNIM" disabled="">Run NIM</button>
         </td>
       </tr>
       <tr>
@@ -391,38 +262,75 @@
       <tr>
         <td>
           <div class="tag_head" id="annotatedTagsHead" style="display: none">
-            <span>Annotated Labels</span><br />
+            <span>Annotated Labels</span>
+            <br />
             <div class="tag_list_wrapper" id="annotatedTags">
             </div>
           </div>
         </td>
       </tr>
+      </tbody>
     </table>
   </div>
   <div class="col-md-9">
     <progress class="progress-bar" max="100" style="width: 1170px; height: 4px; margin-bottom: 1px;"></progress>
     <table class="mytable">
+      <tbody>
       <tr>
         <td rowspan="2" class="box">
-          <span style="color: darkgray; padding-left: 5px;" id="l_element1"></span>
+          <span style="color: darkgray; padding-left: 5px;" id="title_element1"></span>
           <div id="element1" oncontextmenu="return false" style="height: 780px; width: 780px;"></div>
         </td>
         <td class="box">
-          <span style="color: darkgray; padding-left: 5px;" id="l_element2"></span>
+          <span style="color: darkgray; padding-left: 5px;" id="title_element2"></span>
           <div id="element2" oncontextmenu="return false" style="height: 390px; width: 390px;"></div>
         </td>
       </tr>
       <tr>
         <td class="box">
-          <span style="color: darkgray; padding-left: 5px;" id="l_element3"></span>
+          <span style="color: darkgray; padding-left: 5px;" id="title_element3"></span>
           <div id="element3" oncontextmenu="return false" style="height: 390px; width: 390px;"></div>
         </td>
       </tr>
+      </tbody>
     </table>
   </div>
 </div>
+
+
+<!-- The modal -->
+<div class="modal fade" id="addNewLabelModal" tabindex="-1" role="dialog" aria-labelledby="modalLabelSmall"
+     aria-hidden="true" style="color: black">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="modalLabelSmall">Modal Title</h4>
+      </div>
+
+      <div class="modal-body">
+        <form id="myform">
+          <div class="form-group">
+            <label for="inputLabelIndex">Label Index</label>
+            <select class="form-control" id="inputLabelIndex">
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="inputLabelName">Label Name</label>
+            <input type="text" class="form-control" id="inputLabelName" required>
+          </div>
+          <button type="submit" class="btn btn-default" id="btnAddNewLabel">OK</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+</body>
 <script>
   $('#clickPrompts').selectize();
 </script>
-</body>
 </html>

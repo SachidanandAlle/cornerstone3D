@@ -1,8 +1,8 @@
 export const NIM_PROXY_URL = '';
 export const VISTA_LABELS = {
-  '0': 'background',
+  // '0': 'background',
   '1': 'liver',
-  '2': 'kidney',
+  // '2': 'kidney',
   '3': 'spleen',
   '4': 'pancreas',
   '5': 'right kidney',
@@ -18,8 +18,8 @@ export const VISTA_LABELS = {
   '15': 'bladder',
   '17': 'portal vein and splenic vein',
   '19': 'small bowel',
-  '20': 'lung',
-  '21': 'bone',
+  // '20': 'lung',
+  // '21': 'bone',
   '22': 'brain',
   '23': 'lung tumor',
   '24': 'pancreatic tumor',

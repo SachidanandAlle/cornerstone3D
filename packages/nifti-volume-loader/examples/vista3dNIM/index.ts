@@ -1,313 +1,21 @@
+import { NIM_PROXY_URL, VISTA_LABELS } from './constants';
 import {
-  RenderingEngine,
-  Enums,
-  init as csInit,
-  volumeLoader,
-  setVolumesForViewports,
-  eventTarget,
-  setUseSharedArrayBuffer,
-  triggerEvent,
-  cache as cornerstoneCache,
-} from '@cornerstonejs/core';
-import * as cornerstoneTools from '@cornerstonejs/tools';
-import {
-  cornerstoneNiftiImageVolumeLoader,
-  Enums as NiftiEnums,
-} from '@cornerstonejs/nifti-volume-loader';
+  clearAnnotations,
+  fillVolumeSegmentationWithLabelData,
+  getClickPoints,
+  getSegmentColor,
+  removeSegment,
+  renderImage,
+  resetImage,
+  restoreAnnotations,
+  saveAnnotations,
+  setProbeTool,
+  setProbeToolColor,
+} from './segutils';
 
-import * as cornerstone from '@cornerstonejs/core';
-import * as nrrdjs from '@jonathanlurie/nrrdjs';
-
-import { setCtTransferFunctionForVolumeActor } from '../../../../utils/demo/helpers';
-import ProbeMONAITool from './ProbeTool';
-import {
-  indexToLabel,
-  labelToIndex,
-  NIM_PROXY_URL,
-  VISTA_LABELS,
-} from './constants';
-import jsZip from 'jszip';
-
-const {
-  SegmentationDisplayTool,
-  ToolGroupManager,
-  StackScrollMouseWheelTool,
-  Enums: csToolsEnums,
-  init: csTools3dInit,
-  segmentation,
-} = cornerstoneTools;
-
-const toolGroupId = 'STACK_TOOL_GROUP_ID';
-const viewportId1 = 'CT_NIFTI_AXIAL';
-const viewportId2 = 'CT_NIFTI_SAGITTAL';
-const viewportId3 = 'CT_NIFTI_CORONAL';
-
-const segmentationId = 'SEG_NIFTI_ID';
-const labelToClickPoints = new Map();
-let currnetLabelForClickPoints = '';
-const autoRunLabels = new Map();
-
-const renderingEngineId = 'myRenderingEngine';
-let renderingEngine;
-let ctVolume;
-
-const viewportInputArray = [
-  {
-    viewportId: viewportId1,
-    type: Enums.ViewportType.ORTHOGRAPHIC,
-    element: document.getElementById('element1'),
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.AXIAL,
-    },
-  },
-  {
-    viewportId: viewportId2,
-    type: Enums.ViewportType.ORTHOGRAPHIC,
-    element: document.getElementById('element2'),
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.SAGITTAL,
-    },
-  },
-  {
-    viewportId: viewportId3,
-    type: Enums.ViewportType.ORTHOGRAPHIC,
-    element: document.getElementById('element3'),
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.CORONAL,
-    },
-  },
-];
-
-const addSegmentationsToState = async (volumeId: string) => {
-  const segmentationForView =
-    segmentation.state.getSegmentation(segmentationId);
-  const segmentationVolume = cornerstoneCache.getVolume(segmentationId);
-  if (!segmentationForView && !segmentationVolume) {
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
-      volumeId: segmentationId,
-    });
-    segmentation.addSegmentations([
-      {
-        segmentationId: segmentationId,
-        representation: {
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-          data: {
-            volumeId: segmentationId,
-          },
-        },
-      },
-    ]);
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
-      {
-        segmentationId: segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
-  }
-};
-
-function reset() {
-  cornerstoneCache.purgeCache();
-  renderingEngine?.destroy();
-  segmentation.state.removeSegmentation(segmentationId);
-  ToolGroupManager.destroyToolGroup(toolGroupId);
-  renderingEngine = null;
-
-  currnetLabelForClickPoints = '';
-  labelToClickPoints.clear();
-  autoRunLabels.clear();
-
-  document.getElementById('clickPrompts').selectize.setValue('');
-  document.getElementById('annotatedTags').innerHTML = '';
-  document.getElementById('annotatedTagsHead').style.display = 'none';
-}
-
-document.getElementById('runNIM').onclick = async () => {
-  await onRunNIM();
-};
-
-async function onRunNIM() {
-  document.getElementById('runNIM').disabled = true;
-  document.getElementById('imageURI').readOnly = true;
-  document.getElementById('loadImage').disabled = true;
-  document.getElementById('clickPrompts').selectize.disable();
-  document.getElementById('runStatus').style.display = 'block';
-
-  await fillVolumeSegmentationWithLabelData();
-
-  document.getElementById('runNIM').disabled = false;
-  document.getElementById('imageURI').readOnly = false;
-  document.getElementById('loadImage').disabled = false;
-  document.getElementById('clickPrompts').selectize.enable();
-  document.getElementById('runStatus').style.display = 'none';
-}
-
-document.getElementById('loadImage').onclick = async () => {
-  reset();
-  await setup();
-};
-
-document.getElementById('clickPrompts').onchange = async () => {
-  await onSelectClickLabel();
-};
-
-document.getElementById('clearClicks').onclick = async () => {
-  await onClearClicks();
-};
-
-async function onClearClicks() {
-  const label = document.getElementById('clickPrompts').value;
-  if (label === '') {
-    return;
-  }
-
-  console.log('clear click points for', label);
-  labelToClickPoints.delete(label);
-  cornerstoneTools.annotation.state
-    .getAnnotationManager()
-    .removeAllAnnotations();
-  renderingEngine?.render();
-}
-
-document.getElementById('clearAllClicks').onclick = async () => {
-  await onClearAllClicks();
-};
-
-async function onClearAllClicks() {
-  console.log('clear all click points...');
-  cornerstoneTools.annotation.state
-    .getAnnotationManager()
-    .removeAllAnnotations();
-
-  currnetLabelForClickPoints = '';
-  labelToClickPoints.clear();
-  document.getElementById('clickPrompts').selectize.setValue('');
-  await onSelectClickLabel();
-}
-
-async function onSelectClickLabel() {
-  const label = document.getElementById('clickPrompts').value;
-  console.log('You selected: ', label);
-  console.log('Status: ', currnetLabelForClickPoints, labelToClickPoints);
-
-  document.getElementById('clearClicks').style.color =
-    label === '' ? 'gray' : 'darkgreen';
-
-  document.getElementById('runNIM').disabled = label === '';
-
-  const manager = cornerstoneTools.annotation.state.getAnnotationManager();
-  if (label === currnetLabelForClickPoints) {
-    console.log('Current and prev same', label, currnetLabelForClickPoints);
-    return;
-  } else {
-    const annotations = manager.saveAnnotations(null, 'ProbeMONAITool');
-    console.log('Annotations', annotations);
-    if (!$.isEmptyObject(annotations)) {
-      labelToClickPoints.set(currnetLabelForClickPoints, annotations);
-      cornerstoneTools.annotation.state
-        .getAnnotationManager()
-        .removeAllAnnotations();
-      renderingEngine?.render();
-      console.log(
-        'Saving prev annotations for',
-        currnetLabelForClickPoints,
-        annotations
-      );
-    }
-  }
-
-  currnetLabelForClickPoints = label;
-  const annotations = labelToClickPoints[label];
-  if (labelToClickPoints.has(label) && annotations) {
-    console.log('Restoring previous annotations for', label, annotations);
-    manager.restoreAnnotations(annotations, null, 'ProbeMONAITool');
-    renderingEngine?.render();
-  } else if (label !== '') {
-    console.log('No prev annotations found for', label);
-    // if (document.getElementById('autoRunChecked').checked) {
-    if (!autoRunLabels.has(label)) {
-      autoRunLabels.set(label, labelToIndex(label));
-      await onRunNIM();
-    }
-  }
-
-  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-  if (label === '') {
-    // toolGroup.setToolActive(StackScrollMouseWheelTool.toolName, {
-    //   bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-    // });
-    toolGroup.setToolDisabled(ProbeMONAITool.toolName);
-    console.log('ProbeMONAITool is reset');
-    return;
-  }
-
-  const toolName = toolGroup.getActivePrimaryMouseButtonTool();
-  if (!toolName || toolName !== ProbeMONAITool.toolName) {
-    toolGroup.setToolEnabled(ProbeMONAITool.toolName);
-    toolGroup.setToolActive(ProbeMONAITool.toolName, {
-      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-    });
-    console.log('ProbeMONAITool is Active');
-  }
-}
-
-async function setup() {
-  document.getElementById('runNIM').disabled = true;
-  setUseSharedArrayBuffer(false);
-  await csInit();
-  await csTools3dInit();
-
-  volumeLoader.registerVolumeLoader('nifti', cornerstoneNiftiImageVolumeLoader);
-
-  const niftiURL = document.getElementById('imageURI').value;
-  console.log('Using Image URI', niftiURL);
-  const volumeId = 'nifti:' + niftiURL;
-
-  // Add tools to Cornerstone3D
-  cornerstoneTools.removeTool(SegmentationDisplayTool);
-  cornerstoneTools.removeTool(StackScrollMouseWheelTool);
-  cornerstoneTools.removeTool(ProbeMONAITool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(ProbeMONAITool);
-
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(ProbeMONAITool.toolName);
-  toolGroup.setToolActive(ProbeMONAITool.toolName);
-
-  renderingEngine = new RenderingEngine(renderingEngineId);
-  renderingEngine.setViewports(viewportInputArray);
-  toolGroup.addViewport(viewportId1, renderingEngineId);
-  toolGroup.addViewport(viewportId2, renderingEngineId);
-  toolGroup.addViewport(viewportId3, renderingEngineId);
-
-  eventTarget.addEventListener(
-    NiftiEnums.Events.NIFTI_VOLUME_PROGRESS,
-    updateProgress
-  );
-
-  try {
-    ctVolume = await volumeLoader.createAndCacheVolume(volumeId);
-    await addSegmentationsToState(volumeId);
-
-    setVolumesForViewports(
-      renderingEngine,
-      [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-      viewportInputArray.map((v) => v.viewportId)
-    );
-
-    renderingEngine.render();
-  } catch (error) {
-    alert(
-      'Failed to load Image from remote.\nCheck if it is a valid URI and accessible'
-    );
-    reset();
-  }
-}
+let cornerStoneImage = null;
+let selectedLabel = '';
+let autoRunLabels = new Map();
 
 const updateProgress = (evt) => {
   const { data } = evt.detail;
@@ -325,114 +33,234 @@ const updateProgress = (evt) => {
   element.value = progress;
 
   if (progress >= 100) {
-    document.getElementById('l_element1').innerText = 'Axial';
-    document.getElementById('l_element2').innerText = 'Sagittal';
-    document.getElementById('l_element3').innerText = 'Coronal';
+    $('#title_element1').text('Axial');
+    $('#title_element2').text('Sagittal');
+    $('#title_element3').text('Coronal');
   }
-  document.getElementById('loadImage').disabled = progress < 100;
+
+  $('#loadImage').prop('disabled', progress < 100);
 };
 
-function getClickPoints() {
-  const manager = cornerstoneTools.annotation.state.getAnnotationManager();
-  const annotations = manager.saveAnnotations(null, 'ProbeMONAITool');
-  labelToClickPoints[currnetLabelForClickPoints] = annotations;
+function setup() {
+  $(document).ready(async function () {
+    console.log('Document Ready...');
+    onInit();
 
-  const { worldToIndex } = ctVolume.imageData;
-  const points = {};
+    document.getElementById('loadImage').onclick = async () => {
+      onReset();
+      await onInit();
+    };
 
-  const label = currnetLabelForClickPoints;
-  for (const uid in labelToClickPoints[label]) {
-    const annotations = labelToClickPoints[label][uid]['ProbeMONAI'];
-    console.log(annotations);
+    document.getElementById('runNIM').onclick = async () => {
+      await onRunNIM();
+    };
 
-    points[label] = [];
-    for (const annotation of annotations) {
-      const pt = annotation.data.handles.points[0];
-      points[label].push(worldToIndex(pt).map(Math.round));
-    }
-  }
+    document.getElementById('newLabelLink').onclick = async () => {
+      onNewLabelLink();
+    };
 
-  console.log('Point Prompts', points, Object.keys(points).length);
-  return points;
+    document.getElementById('clickPrompts').onchange = async () => {
+      await onSelectLabel();
+    };
+
+    document.getElementById('clearClicks').onclick = async () => {
+      await onClearClicks();
+    };
+
+    document.getElementById('clearAllClicks').onclick = async () => {
+      await onClearAllClicks();
+    };
+
+    document.getElementById('myform').addEventListener('submit', submitForm);
+  });
 }
 
-async function fillVolumeSegmentationWithLabelData() {
-  const segmentationVolume = cornerstone.cache.getVolume(segmentationId);
-  const scalarData = segmentationVolume.scalarData;
-  const imageURI = document.getElementById('imageURI').value;
-  const nimsURI = document.getElementById('nimsURI').value;
-  const authHeader = document.getElementById('nimsAuthHeader').value;
-  const classPrompts = [];
+function onReset() {
+  selectedLabel = '';
+  autoRunLabels = new Map();
 
-  const pointPrompts = getClickPoints();
-  const nimReqData = {
-    image: imageURI,
-    prompts: {},
-  };
+  document.getElementById('clickPrompts').selectize.setValue('');
+  document.getElementById('annotatedTags').innerHTML = '';
+  document.getElementById('annotatedTagsHead').style.display = 'none';
+}
 
-  const usingPointPrompts = Object.keys(pointPrompts).length > 0;
-  const current_class_id = labelToIndex(currnetLabelForClickPoints);
-  if (!usingPointPrompts) {
-    classPrompts.push(currnetLabelForClickPoints);
+async function onInit() {
+  const selectize = document.getElementById('clickPrompts').selectize;
+  for (const key in VISTA_LABELS) {
+    selectize.addOption({ value: key, text: VISTA_LABELS[key] });
   }
 
-  if (usingPointPrompts) {
-    nimReqData.prompts['points'] = pointPrompts;
-  } else {
-    nimReqData.prompts['classes'] = classPrompts;
+  resetImage(cornerStoneImage?.renderingEngine);
+
+  const niftiURL = $('#imageURI').val().toString();
+  console.log('Using Image URI', niftiURL);
+  const volumeId = 'nifti:' + niftiURL;
+  cornerStoneImage = await renderImage(volumeId, updateProgress);
+}
+
+async function onSelectLabel() {
+  const label = $('#clickPrompts').val().toString();
+  const class_idx = label && label !== '' ? parseInt(label) : 0;
+  console.log('Selected Label', label, class_idx);
+
+  $('#runNIM').prop('disabled', label === '');
+  $('#clearClicks').css('color', label === '' ? 'gray' : 'darkgreen');
+
+  if (label === '' || selectedLabel === '') {
+    setProbeTool(label);
   }
-  console.log('nimReqData', nimReqData, usingPointPrompts, current_class_id);
+  setProbeToolColor(class_idx);
+
+  // In case of Tag Delete
+  if (selectedLabel === label) {
+    return;
+  }
+
+  if (label !== '' && !autoRunLabels.has(label)) {
+    autoRunLabels.set(label, null);
+    if (class_idx < 133) {
+      await onRunNIM();
+    }
+  }
+
+  console.log(autoRunLabels);
+  if (selectedLabel !== '') {
+    autoRunLabels.set(selectedLabel, saveAnnotations());
+  }
+  restoreAnnotations(
+    autoRunLabels.get(label),
+    cornerStoneImage?.renderingEngine
+  );
+  selectedLabel = label;
+
+  updateLabelTags();
+}
+
+function onClearClicks() {
+  const label = document.getElementById('clickPrompts').value;
+  console.log('clear click points for', label);
+  clearAnnotations(cornerStoneImage?.renderingEngine);
+
+  if (label !== '') {
+    autoRunLabels.set(label, null);
+  }
+}
+
+function onClearAllClicks() {
+  clearAnnotations(cornerStoneImage?.renderingEngine);
+  for (const label of autoRunLabels.keys()) {
+    autoRunLabels.set(label, null);
+  }
+}
+
+function updateLabelTags() {
+  console.log('Update Label Tags', autoRunLabels.keys());
+  $('#annotatedTagsHead').hide();
+
+  let tags = '';
+  const selectize = document.getElementById('clickPrompts').selectize;
+  for (const label of autoRunLabels.keys()) {
+    const idx = label && label !== '' ? parseInt(label) : 0;
+    if (!idx) {
+      continue;
+    }
+
+    const col = getSegmentColor(idx);
+    tags +=
+      '<div class="tag_list" style="background-color: rgb(' +
+      col[0] +
+      ',' +
+      col[1] +
+      ',' +
+      col[2] +
+      ')" data-id=\'' +
+      label +
+      "'>" +
+      selectize.getOption(label)[0].innerText +
+      '<span>x</span></div>';
+  }
+
+  if (tags === '') {
+    return;
+  }
+
+  $('#annotatedTagsHead').show();
+  document.getElementById('annotatedTags').innerHTML = tags;
+
+  $('.tag_list').click(async function () {
+    $(this).addClass('tag_list_hide');
+    const id = $(this).data('id');
+    await onDeleteTag(String(id));
+  });
+}
+
+async function onDeleteTag(id) {
+  console.log(
+    'Remove Tag',
+    id,
+    selectedLabel,
+    id == selectedLabel,
+    id === selectedLabel
+  );
+
+  console.log('Initial: ', autoRunLabels, autoRunLabels.keys(), selectedLabel);
+  autoRunLabels.delete(id);
+  removeSegment(parseInt(id));
+
+  console.log('After: ', autoRunLabels, autoRunLabels.keys());
+  if (id === selectedLabel) {
+    clearAnnotations(cornerStoneImage?.renderingEngine);
+    selectedLabel = '';
+    document.getElementById('clickPrompts').selectize.setValue('');
+  }
+  console.log('Final: ', autoRunLabels, autoRunLabels.keys());
+  if (autoRunLabels.size === 0) {
+    $('#annotatedTagsHead').hide();
+  }
+}
+
+function onNewLabelLink() {
+  let html = '';
+  const current = Object.keys(
+    document.getElementById('clickPrompts').selectize.options
+  );
+  for (let i = 133; i <= 255; i++) {
+    if (!current.includes(String(i))) {
+      html += '<option key="' + i + '>' + i + '</option>';
+    }
+  }
+  document.getElementById('inputLabelIndex').innerHTML = html;
+  $('#addNewLabelModal').modal('show');
+}
+
+function submitForm(e) {
+  e.preventDefault();
+
+  const key = $('#inputLabelIndex').find(':selected').val();
+  const text = $('#inputLabelName').val();
+
+  const selectize = document.getElementById('clickPrompts').selectize;
+  selectize.addOption({ value: key, text: text });
+  $('#addNewLabelModal').modal('hide');
+
+  selectize.setValue(key);
+}
+
+async function onRunNIM() {
+  $('#runNIM').prop('disabled', true);
+  $('#imageURI').prop('readOnly', true);
+  $('#loadImage').prop('disabled', true);
+  $('#runNIM').prop('disabled', true);
+  $('#runStatus').show();
+  document.getElementById('clickPrompts').selectize.disable();
+
+  const label = $('#clickPrompts').val().toString();
+  const class_idx = label && label !== '' ? parseInt(label) : 0;
 
   document.body.style.cursor = 'wait';
-
-  const response = await fetch(NIM_PROXY_URL + nimsURI, {
-    method: 'POST',
-    headers: {
-      Authorization: authHeader,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(nimReqData),
-  });
-
+  const response = await fetchSeg();
   if (response.status == 200) {
-    try {
-      let nrrdfile;
-      const data = await response.arrayBuffer();
-      const contentType = response.headers.get('content-type')?.toLowerCase();
-
-      console.log('Response Content Type', contentType);
-      if (
-        nimsURI ===
-          'https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d' ||
-        contentType === 'application/zip'
-      ) {
-        const zip = await jsZip.loadAsync(data);
-        const fileData = await Object.values(zip.files)[0].async('arraybuffer');
-        nrrdfile = nrrdjs.parse(fileData);
-      } else {
-        nrrdfile = nrrdjs.parse(data);
-      }
-
-      for (let i = 0; i < scalarData.length; i++) {
-        if (
-          scalarData[i] === current_class_id ||
-          nrrdfile.data[i] === current_class_id
-        ) {
-          scalarData[i] = nrrdfile.data[i];
-        }
-      }
-
-      triggerEvent(
-        eventTarget,
-        csToolsEnums.Events.SEGMENTATION_DATA_MODIFIED,
-        {
-          segmentationId: segmentationId,
-        }
-      );
-    } catch (error) {
-      console.log(error);
-      alert('Not a valid response from NIM\n' + error);
-    }
+    await fillVolumeSegmentationWithLabelData(response, class_idx);
   } else {
     if (response.status == 401) {
       alert(
@@ -454,55 +282,64 @@ async function fillVolumeSegmentationWithLabelData() {
     }
   }
   document.body.style.cursor = 'default';
-  const colorLUT = segmentation.state.getColorLUT(0);
-  console.log(colorLUT[1]);
 
-  document.getElementById('annotatedTagsHead').style.display = 'none';
+  $('#runNIM').prop('disabled', false);
+  $('#imageURI').prop('readOnly', false);
+  $('#loadImage').prop('disabled', false);
+  $('#runNIM').prop('disabled', false);
+  $('#runStatus').hide();
+  document.getElementById('clickPrompts').selectize.enable();
+}
 
-  let flag = false;
-  let tags = '';
-  for (const [key, value] of autoRunLabels.entries()) {
-    if (value) {
-      if (!flag) {
-        document.getElementById('annotatedTagsHead').style.display = 'block';
-        flag = true;
-      }
+async function fetchSeg() {
+  const imageURI = $('#imageURI').val().toString();
+  const nimsURI = $('#nimsURI').val().toString();
+  const authHeader = $('#nimsAuthHeader').val().toString();
+  const label = $('#clickPrompts').val().toString();
 
-      const col = colorLUT[value];
-      tags +=
-        '<div class="tag_list" style="background-color: rgb(' +
-        col[0] +
-        ',' +
-        col[1] +
-        ',' +
-        col[2] +
-        ')" data-id=\'' +
-        value +
-        "'>" +
-        key +
-        '<span>x</span></div>';
-    }
+  console.log(cornerStoneImage);
+  if (label) {
+    autoRunLabels.set(label, saveAnnotations());
   }
 
-  document.getElementById('annotatedTags').innerHTML = tags;
-  $('.tag_list').click(async function () {
-    const id = $(this).data('id');
-    $(this).addClass('tag_list_hide');
+  const class_idx = label && label !== '' ? parseInt(label) : 0;
+  const classPrompts = [];
+  const annotations =
+    label && autoRunLabels.has(label) ? autoRunLabels.get(label) : null;
+  const fg = label
+    ? getClickPoints(cornerStoneImage?.ctVolume, annotations, 1)
+    : [];
+  const bg = label
+    ? getClickPoints(cornerStoneImage?.ctVolume, annotations, 2)
+    : [];
+  const nimReqData = {
+    image: imageURI,
+    prompts: {},
+  };
 
-    for (let i = 0; i < scalarData.length; i++) {
-      if (scalarData[i] === id) {
-        scalarData[i] = 0;
-      }
+  const usingPointPrompts = Object.keys(fg).length > 0;
+  if (!usingPointPrompts) {
+    classPrompts.push(class_idx);
+  }
+
+  if (usingPointPrompts) {
+    nimReqData.prompts['points'] = {};
+    nimReqData.prompts['points'][class_idx] = fg;
+    if (Object.keys(bg).length > 0) {
+      nimReqData.prompts['points'][0] = bg;
     }
-    triggerEvent(eventTarget, csToolsEnums.Events.SEGMENTATION_DATA_MODIFIED, {
-      segmentationId: segmentationId,
-    });
+  } else {
+    nimReqData.prompts['classes'] = classPrompts;
+  }
+  console.log('nimReqData', nimReqData, usingPointPrompts, class_idx);
 
-    await onClearClicks();
-    console.log(autoRunLabels);
-    autoRunLabels.delete(indexToLabel(id));
-    console.log(autoRunLabels);
-    document.getElementById('clickPrompts').selectize.setValue('');
+  return await fetch(NIM_PROXY_URL + nimsURI, {
+    method: 'POST',
+    headers: {
+      Authorization: authHeader,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(nimReqData),
   });
 }
 
