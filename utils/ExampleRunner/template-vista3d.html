@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>NVIDIA / MONAI Bundle Inference</title>
+  <title>NVIDIA / VISTA-3D NIM</title>
   <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"
@@ -191,10 +191,15 @@
 <body>
 <div id="demo-title-container">
   <div class="card">
-    <h1><span>NVIDIA</span> / MONAI Bundle Inference</h1>
-    <p>MONAI Bundles are a specification and file structure based way of distributing trained MONAI models with associated metadata, code, documentation, and other resources. These are meant to make it easier for you to distribute your model in a format that explains what the model is for, how to use it, how to reproduce the science you've done with it, and use it in other applications such as Label and Deploy.</p>
+    <h1><span>NVIDIA</span> / VISTA-3D NIM</h1>
+    <p>VISTA-3D is a specialized interactive foundation model for 3D medical imaging. It excels in providing accurate
+      and adaptable segmentation analysis across anatomies and modalities. Utilizing a multi-head architecture, VISTA-3D
+      adapts to varying conditions and anatomical areas, helping guide users' annotation workflow. This model is for
+      research purposes and not for clinical usage.
+    </p>
     <div class="tags">
       <span class="tag">image segmentation</span>
+      <span class="tag">interactive annotation</span>
       <span class="tag">medical imaging</span>
     </div>
   </div>
@@ -205,40 +210,63 @@
     <form action="javascript:void(0);">
       <div class="form-group">
         <label for="imageURI">Image URI</label>
-            <input type="url" class="form-control" id="imageURI" value="examples/4.nii.gz">
-<!--        <input type="url" class="form-control" id="imageURI"-->
-<!--               value="https://assets.ngc.nvidia.com/products/api-catalog/vista3d/example-1.nii.gz">-->
+        <!--        <input type="url" class="form-control" id="imageURI" value="http://10.117.3.221:3001/example-1.nii.gz">-->
+        <input type="url" class="form-control" id="imageURI"
+               value="https://assets.ngc.nvidia.com/products/api-catalog/vista3d/example-1.nii.gz">
         <button class="btn-xs" style="width: 100%" id="loadImage">Load Image</button>
       </div>
       <hr>
       <div class="form-group">
-        <label for="nimsURI">Inference Endpoint</label>
-                <input type="url" class="form-control" id="nimsURI" value="/v1/run">
-<!--        <input type="url" class="form-control" id="nimsURI"-->
-<!--               value="https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d">-->
+        <label for="nimsURI">NIMS Endpoint</label>
+        <!--        <input type="url" class="form-control" id="nimsURI" value="http://10.117.3.221:8008/vista3d/inference">-->
+        <input type="url" class="form-control" id="nimsURI"
+               value="https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d">
       </div>
       <div class="form-group">
         <label for="nimsAuthHeader">Auth Header</label>
         <input type="text" class="form-control" id="nimsAuthHeader" value="" placeholder="Bearer <api_key>">
-      </div>
-      <div class="form-group">
-        <label for="params">Additional Params</label>
-        <textarea class="form-control" id="params" placeholder="{}">{}</textarea>
       </div>
       <hr>
     </form>
     <table class="mytable" style="width: 100%;">
       <tbody>
       <tr>
+        <td style="vertical-align: top;">
+          <div class="form-group">
+            <label for="clickPrompts">Labels <a class="ba" href="javascript:void(0);" id="newLabelLink">Add
+              New</a></label>
+            <select id="clickPrompts">
+              <option value="">-- select --</option>
+            </select>
+            <br />
+            <span style="font-size: smaller;font-family: sans-serif;color: darkgray;">Use Right click to add background points</span>
+            <span style="float: right; font-size: smaller; font-family: sans-serif;">Click Prompts:&nbsp;&nbsp;
+              <a class="ba" id="clearClicks" href="javascript:void(0);" style="color: gray">Clear</a> |
+              <a class="ba" id="clearAllClicks" href="javascript:void(0);">Clear All</a>
+            </span>
+          </div>
+        </td>
+      </tr>
+      <tr>
         <td style="float: right">
           <br />
-          <button id="runNIM" disabled="">Run</button>
+          <button id="runNIM" disabled="">Run NIM</button>
         </td>
       </tr>
       <tr>
         <td style="text-align: center">
           <br />
-          <p class="bg-warning" id="runStatus" style="display: none">Please wait while running Inference...</p>
+          <p class="bg-warning" id="runStatus" style="display: none">Please wait while running NIM...</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="tag_head" id="annotatedTagsHead" style="display: none">
+            <span>Annotated Labels</span>
+            <br />
+            <div class="tag_list_wrapper" id="annotatedTags">
+            </div>
+          </div>
         </td>
       </tr>
       </tbody>
@@ -269,5 +297,40 @@
   </div>
 </div>
 
+
+<!-- The modal -->
+<div class="modal fade" id="addNewLabelModal" tabindex="-1" role="dialog" aria-labelledby="modalLabelSmall"
+     aria-hidden="true" style="color: black">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="modalLabelSmall">Modal Title</h4>
+      </div>
+
+      <div class="modal-body">
+        <form id="myform">
+          <div class="form-group">
+            <label for="inputLabelIndex">Label Index</label>
+            <select class="form-control" id="inputLabelIndex">
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="inputLabelName">Label Name</label>
+            <input type="text" class="form-control" id="inputLabelName" required>
+          </div>
+          <button type="submit" class="btn btn-default" id="btnAddNewLabel">OK</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 </body>
+<script>
+  $('#clickPrompts').selectize();
+</script>
 </html>
