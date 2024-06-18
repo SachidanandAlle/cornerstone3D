@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>NVIDIA / MONAI Bundle Inference</title>
+  <title>NVIDIA / MONAI MAISI</title>
   <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"
@@ -191,10 +191,10 @@
 <body>
 <div id="demo-title-container">
   <div class="card">
-    <h1><span>NVIDIA</span> / MONAI Bundle Inference</h1>
-    <p>MONAI Bundles are a specification and file structure based way of distributing trained MONAI models with associated metadata, code, documentation, and other resources. These are meant to make it easier for you to distribute your model in a format that explains what the model is for, how to use it, how to reproduce the science you've done with it, and use it in other applications such as Label and Deploy.</p>
+    <h1><span>NVIDIA</span> / MAISI</h1>
+    <p>Synthetic Data Generation.</p>
     <div class="tags">
-      <span class="tag">image segmentation</span>
+      <span class="tag">genai</span>
       <span class="tag">medical imaging</span>
     </div>
   </div>
@@ -204,13 +204,33 @@
   <div class="col-md-3 card2" style="height: 830px">
     <form action="javascript:void(0);">
       <div class="form-group">
-        <label for="imageURI">Image URI</label>
-            <input type="url" class="form-control" id="imageURI" value="examples/4.nii.gz">
-<!--        <input type="url" class="form-control" id="imageURI"-->
-<!--               value="https://assets.ngc.nvidia.com/products/api-catalog/vista3d/example-1.nii.gz">-->
-        <button class="btn-xs" style="width: 100%" id="loadImage">Load Image</button>
+        <label for="bodyRegion">Body Region</label>
+        <select id="bodyRegion" required>
+          <option value="">-- select --</option>
+        </select>
       </div>
-      <hr>
+      <div class="form-group">
+        <label for="anatomyList">Anatomies</label>
+        <select id="anatomyList" required>
+          <option value="">-- select --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="dimensions">Dimensions</label>
+        <select id="dimensions">
+          <option value="128">128 x 128 x 128</option>
+          <option value="256" selected>256 x 256 x 256</option>
+          <option value="512">512 x 512 x 512</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="spacing">Spacing</label>
+        <select id="spacing">
+          <option value="1" selected>1mm x 1mm x 1mm</option>
+          <option value="1.5">1.5mm x 1.5mm x 1.5mm</option>
+        </select>
+      </div>
+      <hr/>
       <div class="form-group">
         <label for="nimsURI">Inference Endpoint</label>
                 <input type="url" class="form-control" id="nimsURI" value="/v1/run">
@@ -220,10 +240,6 @@
       <div class="form-group">
         <label for="nimsAuthHeader">Auth Header</label>
         <input type="text" class="form-control" id="nimsAuthHeader" value="" placeholder="Bearer <api_key>">
-      </div>
-      <div class="form-group">
-        <label for="params">Additional Params</label>
-        <textarea class="form-control" id="params" placeholder="{}">{}</textarea>
       </div>
       <hr>
     </form>
@@ -268,6 +284,13 @@
     </table>
   </div>
 </div>
+
+<script>
+  $('#bodyRegion').selectize();
+  $('#anatomyList').selectize();
+  $('#dimensions').selectize();
+  $('#spacing').selectize();
+</script>
 
 </body>
 </html>
