@@ -20,6 +20,8 @@ import { setCtTransferFunctionForVolumeActor } from '../../../../utils/demo/help
 import * as nrrdjs from '@jonathanlurie/nrrdjs';
 import jsZip from 'jszip';
 
+import * as nifti from 'nifti-reader-js';
+
 const {
   SegmentationDisplayTool,
   ToolGroupManager,

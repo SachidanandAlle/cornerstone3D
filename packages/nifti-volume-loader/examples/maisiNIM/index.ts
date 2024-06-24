@@ -4,9 +4,8 @@ import {
   renderImage,
   resetImage,
 } from './segutils';
-import { VISTA_LABELS } from '../vista3dNIM/constants';
 
-const cornerStoneImage = null;
+let cornerStoneImage = null;
 
 const updateProgress = (evt) => {
   const { data } = evt.detail;
@@ -60,11 +59,9 @@ async function onInit() {
   });
 
   resetImage(cornerStoneImage?.renderingEngine);
-
-  // const niftiURL = $('#imageURI').val().toString();
-  // console.log('Using Image URI', niftiURL);
-  // const volumeId = 'nifti:' + niftiURL;
-  // cornerStoneImage = await renderImage(volumeId, updateProgress);
+  s1.setValue('chest/thorax');
+  s2.setValue('liver');
+  $('#runNIM').prop('disabled', false);
 }
 
 async function onRunNIM() {
@@ -107,22 +104,26 @@ async function onRunNIM() {
 }
 
 async function fetchSeg() {
-  const imageURI = $('#imageURI').val().toString();
   const nimsURI = $('#nimsURI').val().toString();
   const authHeader = $('#nimsAuthHeader').val().toString();
-  const params = JSON.parse($('#params').val().toString());
 
-  console.log(cornerStoneImage);
+  const body_region = $('#bodyRegion').val().toString();
+  const anatomy_list = $('#anatomyList').val().toString();
+  const output_size = parseInt($('#dimensions').val().toString());
+  const spacing = parseFloat($('#spacing').val().toString());
 
   const nimReqData = {
-    image: imageURI,
-    prompts: {},
-    params: params,
+    num_output_samples: 1,
+    body_region: [body_region],
+    anatomy_list: [anatomy_list],
+    output_size: [output_size, output_size, output_size],
+    spacing: [spacing, spacing, spacing],
+    output: { url: 'results/' },
   };
 
   console.log('nimReqData', nimReqData);
 
-  return await fetch(NIM_PROXY_URL + nimsURI, {
+  const r = await fetch(NIM_PROXY_URL + nimsURI, {
     method: 'POST',
     headers: {
       Authorization: authHeader,
@@ -130,6 +131,29 @@ async function fetchSeg() {
     },
     body: JSON.stringify(nimReqData),
   });
+
+  const output = await r.json();
+  // const output = {
+  //   url: [
+  //     '/results/output_q4wyiwgw/sample_20240624_055321_image.nii.gz',
+  //     '/results/output_q4wyiwgw/sample_20240624_055321_label.nrrd',
+  //   ],
+  // };
+
+  const s = (NIM_PROXY_URL + nimsURI).split('/');
+  const url1 =
+    (nimsURI.startsWith('http') ? s[0] + '//' + s[2] : '') + output['url'][0];
+  const url2 =
+    (nimsURI.startsWith('http') ? s[0] + '//' + s[2] : '') + output['url'][1];
+
+  const niftiURL = url1.endsWith('.nii.gz') ? url1 : url2;
+  console.log('Using Image URI', niftiURL);
+  const volumeId = 'nifti:' + niftiURL;
+  cornerStoneImage = await renderImage(volumeId, updateProgress);
+
+  const maskURI = url2.endsWith('.nrrd') ? url2 : url1;
+  console.log('Using Mask URI', maskURI);
+  return await fetch(maskURI);
 }
 
 setup();
