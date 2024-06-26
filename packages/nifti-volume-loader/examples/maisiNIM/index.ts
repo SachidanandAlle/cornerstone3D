@@ -71,6 +71,8 @@ async function onRunNIM() {
   $('#runStatus').show();
 
   document.body.style.cursor = 'wait';
+  resetImage(cornerStoneImage?.renderingEngine);
+
   const response = await fetchSeg();
   if (response.status == 200) {
     await fillVolumeSegmentationWithLabelData(response);
@@ -111,6 +113,7 @@ async function fetchSeg() {
   const anatomy_list = $('#anatomyList').val().toString();
   const output_size = parseInt($('#dimensions').val().toString());
   const spacing = parseFloat($('#spacing').val().toString());
+  const num_inference_steps = parseInt($('#inferenceSteps').val().toString());
 
   const nimReqData = {
     num_output_samples: 1,
@@ -119,6 +122,7 @@ async function fetchSeg() {
     output_size: [output_size, output_size, output_size],
     spacing: [spacing, spacing, spacing],
     output: { url: '/results/' },
+    num_inference_steps: num_inference_steps ? num_inference_steps : null,
   };
 
   console.log('nimReqData', nimReqData);
