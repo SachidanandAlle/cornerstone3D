@@ -59,7 +59,7 @@ async function onInit() {
   });
 
   resetImage(cornerStoneImage?.renderingEngine);
-  s1.setValue('chest/thorax');
+  s1.setValue('chest');
   s2.setValue('liver');
   $('#runNIM').prop('disabled', false);
 }
@@ -118,7 +118,7 @@ async function fetchSeg() {
     anatomy_list: [anatomy_list],
     output_size: [output_size, output_size, output_size],
     spacing: [spacing, spacing, spacing],
-    output: { url: 'results/' },
+    output: { url: '/results/' },
   };
 
   console.log('nimReqData', nimReqData);

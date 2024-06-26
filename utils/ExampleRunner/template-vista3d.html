@@ -210,7 +210,7 @@
     <form action="javascript:void(0);">
       <div class="form-group">
         <label for="imageURI">Image URI</label>
-                <input type="url" class="form-control" id="imageURI" value="examples/1.nii.gz">
+                <input type="url" class="form-control" id="imageURI" value="/examples/1.nii.gz">
 <!--        <input type="url" class="form-control" id="imageURI"-->
 <!--               value="https://assets.ngc.nvidia.com/products/api-catalog/vista3d/example-1.nii.gz">-->
         <button class="btn-xs" style="width: 100%" id="loadImage">Load Image</button>
@@ -222,7 +222,7 @@
 <!--        <input type="url" class="form-control" id="nimsURI"-->
 <!--               value="https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d">-->
       </div>
-      <div class="form-group">
+      <div class="form-group" style="display: none">
         <label for="nimsAuthHeader">Auth Header</label>
         <input type="text" class="form-control" id="nimsAuthHeader" value="" placeholder="Bearer <api_key>">
       </div>

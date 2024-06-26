@@ -1,5 +1,12 @@
 export const NIM_PROXY_URL = '';
-export const BODY_REGION = ['head', 'abdomen', 'chest/thorax', 'pelvis/lower'];
+export const BODY_REGION = [
+  'head',
+  'chest',
+  'thorax',
+  'abdomen',
+  'pelvis',
+  'lower',
+];
 
 export const ANATOMY_LIST = [
   'liver',
