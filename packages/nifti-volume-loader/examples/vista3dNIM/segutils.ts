@@ -246,7 +246,7 @@ export async function fillVolumeSegmentationWithLabelData(response, class_idx) {
       const zip = await jsZip.loadAsync(data);
       console.log(zip.files);
       const targetFiles = zip.filter((f) => {
-        return f.endsWith('.nrrd');
+        return f.endsWith('.nrrd') || Object.keys(zip.files).length < 2;
       });
 
       const fileData = await Object.values(targetFiles)[0].async('arraybuffer');
