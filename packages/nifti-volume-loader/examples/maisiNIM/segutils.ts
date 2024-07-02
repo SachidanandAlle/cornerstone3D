@@ -76,6 +76,9 @@ export function resetImage(renderingEngine) {
   ToolGroupManager.destroyToolGroup(toolGroupId);
   renderingEngine?.destroy();
   cornerstoneCache.purgeCache();
+
+  window.niftiBuffer = null;
+  window.scalarData = null;
 }
 
 export async function renderImage(volumeId, updateProgress) {
@@ -150,26 +153,41 @@ export async function renderImage(volumeId, updateProgress) {
   return { renderingEngine: null, ctVolume: null };
 }
 
-export async function fillVolumeSegmentationWithLabelData(response) {
+export async function fillVolumeSegmentationFromBuffer(data) {
   try {
     const vol = cornerstone.cache.getVolume(segmentationId);
     const scalarData = vol.scalarData;
 
-    let nrrdfile;
-    const data = await response.arrayBuffer();
-    const contentType = response.headers.get('content-type')?.toLowerCase();
-
-    console.log('Response Content Type', contentType);
-    if (contentType === 'application/zip') {
-      const zip = await jsZip.loadAsync(data);
-      const fileData = await Object.values(zip.files)[0].async('arraybuffer');
-      nrrdfile = nrrdjs.parse(fileData);
-    } else {
-      nrrdfile = nrrdjs.parse(data);
-    }
-
+    const nrrdfile = nrrdjs.parse(data);
     for (let i = 0; i < scalarData.length; i++) {
       scalarData[i] = nrrdfile.data[i];
+    }
+
+    triggerEvent(eventTarget, csToolsEnums.Events.SEGMENTATION_DATA_MODIFIED, {
+      segmentationId: segmentationId,
+    });
+  } catch (error) {
+    console.log(error);
+    alert('Error while rendering Segmentation\n' + error);
+  }
+}
+
+export async function toggleMask(hide) {
+  try {
+    const vol = cornerstone.cache.getVolume(segmentationId);
+    const scalarData = vol.scalarData;
+
+    if (hide) {
+      window.scalarData = new Uint8Array(scalarData);
+      for (let i = 0; i < scalarData.length; i++) {
+        window.scalarData[i] = scalarData[i];
+        scalarData[i] = 0;
+      }
+    } else if (window.scalarData) {
+      for (let i = 0; i < scalarData.length; i++) {
+        scalarData[i] = window.scalarData[i];
+      }
+      window.scalarData = null;
     }
 
     triggerEvent(eventTarget, csToolsEnums.Events.SEGMENTATION_DATA_MODIFIED, {

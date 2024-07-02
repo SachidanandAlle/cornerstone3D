@@ -1,32 +1,22 @@
 import { ANATOMY_LIST, BODY_REGION, NIM_PROXY_URL } from './constants';
 import {
-  fillVolumeSegmentationWithLabelData,
+  fillVolumeSegmentationFromBuffer,
   renderImage,
   resetImage,
+  toggleMask,
 } from './segutils';
+import jsZip from 'jszip';
 
 let cornerStoneImage = null;
 
 const updateProgress = (evt) => {
-  const { data } = evt.detail;
-  if (!data) {
-    return;
-  }
+  $('#title_element1').show();
+  $('#title_element2').show();
+  $('#title_element3').show();
 
-  const { total, loaded } = data;
-  if (!total) {
-    return;
-  }
-
-  const progress = Math.round((loaded / total) * 100);
+  const progress = 1000;
   const element = document.querySelector('progress');
   element.value = progress;
-
-  if (progress >= 100) {
-    $('#title_element1').text('Axial');
-    $('#title_element2').text('Sagittal');
-    $('#title_element3').text('Coronal');
-  }
 
   $('#loadImage').prop('disabled', progress < 100);
   $('#runNIM').prop('disabled', progress < 100);
@@ -39,6 +29,10 @@ function setup() {
 
     document.getElementById('runNIM').onclick = async () => {
       await onRunNIM();
+    };
+
+    document.getElementById('toggleMask').onclick = async () => {
+      await onToggleMask();
     };
   });
 }
@@ -59,7 +53,7 @@ async function onInit() {
   });
 
   resetImage(cornerStoneImage?.renderingEngine);
-  s1.setValue('chest');
+  s1.setValue('abdomen');
   s2.setValue('liver');
   $('#runNIM').prop('disabled', false);
 }
@@ -75,7 +69,30 @@ async function onRunNIM() {
 
   const response = await fetchSeg();
   if (response.status == 200) {
-    await fillVolumeSegmentationWithLabelData(response);
+    const data = await response.arrayBuffer();
+    const zip = await jsZip.loadAsync(data);
+
+    console.log(zip.files);
+    const imageFiles = zip.filter((f) => {
+      return f.endsWith('.nii.gz');
+    });
+    const maskFiles = zip.filter((f) => {
+      return f.endsWith('.nrrd');
+    });
+
+    // Load Image
+    window.niftiBuffer = await Object.values(imageFiles)[0].async(
+      'arraybuffer'
+    );
+    const niftiURL = 'http://window.niftiBuffer/' + imageFiles[0].name;
+    const volumeId = 'nifti:' + niftiURL;
+    cornerStoneImage = await renderImage(volumeId, updateProgress);
+    updateProgress(null);
+    window.niftiBuffer = null;
+
+    // Load Mask
+    const maskData = await Object.values(maskFiles)[0].async('arraybuffer');
+    await fillVolumeSegmentationFromBuffer(maskData);
   } else {
     if (response.status == 401) {
       alert(
@@ -99,7 +116,6 @@ async function onRunNIM() {
   document.body.style.cursor = 'default';
 
   $('#runNIM').prop('disabled', false);
-  $('#imageURI').prop('readOnly', false);
   $('#loadImage').prop('disabled', false);
   $('#runNIM').prop('disabled', false);
   $('#runStatus').hide();
@@ -109,55 +125,40 @@ async function fetchSeg() {
   const nimsURI = $('#nimsURI').val().toString();
   const authHeader = $('#nimsAuthHeader').val().toString();
 
-  const body_region = $('#bodyRegion').val().toString();
-  const anatomy_list = $('#anatomyList').val().toString();
+  const body_region = document.getElementById('bodyRegion').selectize.items;
+  const anatomy_list = document.getElementById('anatomyList').selectize.items;
   const output_size = parseInt($('#dimensions').val().toString());
   const spacing = parseFloat($('#spacing').val().toString());
   const num_inference_steps = parseInt($('#inferenceSteps').val().toString());
 
   const nimReqData = {
     num_output_samples: 1,
-    body_region: [body_region],
-    anatomy_list: [anatomy_list],
+    body_region: body_region,
+    anatomy_list: anatomy_list,
     output_size: [output_size, output_size, output_size],
     spacing: [spacing, spacing, spacing],
-    output: { url: '/results/' },
     num_inference_steps: num_inference_steps ? num_inference_steps : null,
   };
 
   console.log('nimReqData', nimReqData);
 
-  const r = await fetch(NIM_PROXY_URL + nimsURI, {
+  // return fetch(
+  //   'http://localhost:3001/c87b4b84-61fe-4851-b9c3-10dd19534380.zip'
+  // );
+
+  return fetch(NIM_PROXY_URL + nimsURI, {
     method: 'POST',
     headers: {
       Authorization: authHeader,
+      'NVCF-POLL-SECONDS': '300',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(nimReqData),
   });
+}
 
-  const output = await r.json();
-  // const output = {
-  //   url: [
-  //     '/results/output_q4wyiwgw/sample_20240624_055321_image.nii.gz',
-  //     '/results/output_q4wyiwgw/sample_20240624_055321_label.nrrd',
-  //   ],
-  // };
-
-  const s = (NIM_PROXY_URL + nimsURI).split('/');
-  const url1 =
-    (nimsURI.startsWith('http') ? s[0] + '//' + s[2] : '') + output['url'][0];
-  const url2 =
-    (nimsURI.startsWith('http') ? s[0] + '//' + s[2] : '') + output['url'][1];
-
-  const niftiURL = url1.endsWith('.nii.gz') ? url1 : url2;
-  console.log('Using Image URI', niftiURL);
-  const volumeId = 'nifti:' + niftiURL;
-  cornerStoneImage = await renderImage(volumeId, updateProgress);
-
-  const maskURI = url2.endsWith('.nrrd') ? url2 : url1;
-  console.log('Using Mask URI', maskURI);
-  return await fetch(maskURI);
+async function onToggleMask() {
+  await toggleMask(document.getElementById('toggleMask').checked);
 }
 
 setup();

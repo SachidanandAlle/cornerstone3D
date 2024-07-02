@@ -160,7 +160,12 @@ export async function fillVolumeSegmentationWithLabelData(response) {
     console.log('Response Content Type', contentType);
     if (contentType === 'application/zip') {
       const zip = await jsZip.loadAsync(data);
-      const fileData = await Object.values(zip.files)[0].async('arraybuffer');
+      console.log(zip.files);
+      const targetFiles = zip.filter((f) => {
+        return f.endsWith('.nrrd');
+      });
+
+      const fileData = await Object.values(targetFiles)[0].async('arraybuffer');
       nrrdfile = nrrdjs.parse(fileData);
     } else {
       nrrdfile = nrrdjs.parse(data);

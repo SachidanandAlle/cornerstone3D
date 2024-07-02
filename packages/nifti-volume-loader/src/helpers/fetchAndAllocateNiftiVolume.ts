@@ -105,13 +105,17 @@ export default async function fetchAndAllocateNiftiVolume(
   const signal = controller.signal;
 
   urlsMap.set(niftiURL, { controller, loading: true });
-
-  let niftiBuffer = (await fetchArrayBuffer(
-    niftiURL,
-    progress,
-    signal,
-    onLoad
-  )) as ArrayBuffer;
+  let niftiBuffer = null;
+  if (niftiURL.startsWith('http://window.niftiBuffer/')) {
+    niftiBuffer = window.niftiBuffer;
+  } else {
+    niftiBuffer = (await fetchArrayBuffer(
+      niftiURL,
+      progress,
+      signal,
+      onLoad
+    )) as ArrayBuffer;
+  }
 
   urlsMap.delete(niftiURL);
 

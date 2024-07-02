@@ -10,7 +10,6 @@ export const BODY_REGION = [
 
 export const ANATOMY_LIST = [
   'liver',
-  'kidney',
   'spleen',
   'pancreas',
   'right kidney',
@@ -24,12 +23,8 @@ export const ANATOMY_LIST = [
   'duodenum',
   'left kidney',
   'bladder',
-  'prostate or uterus',
   'portal vein and splenic vein',
-  'rectum',
   'small bowel',
-  'lung',
-  'bone',
   'brain',
   'lung tumor',
   'pancreatic tumor',
@@ -137,8 +132,5 @@ export const ANATOMY_LIST = [
   'thyroid gland',
   'vertebrae S1',
   'bone lesion',
-  'kidney mass',
-  'liver tumor',
-  'vertebrae L6',
   'airway',
 ];
