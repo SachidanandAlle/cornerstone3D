@@ -192,7 +192,7 @@
 <div id="demo-title-container">
   <div class="card">
     <h1><span>NVIDIA</span> / MONAI Vista2D Inference</h1>
-    <p>VISTA2D bundle for cell image analysis. This is an example, not to be used for diagnostic purposes.</p>
+    <p>VISTA2D bundle for cell image analysis.  This is an example, not to be used for diagnostic purposes.</p>
     <div class="tags">
       <span class="tag">cell segmentation</span>
       <span class="tag">medical imaging</span>
@@ -205,25 +205,25 @@
     <form action="javascript:void(0);">
       <div class="form-group">
         <label for="imageURI">Image URI</label>
-        <input type="url" class="form-control" id="imageURI" value="http://10.117.4.45:9000/img02.png">
-        <!--        <input type="url" class="form-control" id="imageURI"-->
-        <!--               value="https://assets.ngc.nvidia.com/products/api-catalog/vista3d/example-1.nii.gz">-->
+            <input type="url" class="form-control" id="imageURI" value="http://localhost:9000/img02.png">
+<!--        <input type="url" class="form-control" id="imageURI"-->
+<!--               value="https://assets.ngc.nvidia.com/products/api-catalog/vista3d/example-1.nii.gz">-->
         <button class="btn-xs" style="width: 100%" id="loadImage">Load Image</button>
       </div>
       <hr>
       <div class="form-group">
         <label for="nimsURI">Inference Endpoint</label>
-        <input type="url" class="form-control" id="nimsURI" value="http://10.117.4.45:5000/v1/run">
-        <!--        <input type="url" class="form-control" id="nimsURI"-->
-        <!--               value="https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d">-->
+                <input type="url" class="form-control" id="nimsURI" value="/v1/run">
+<!--        <input type="url" class="form-control" id="nimsURI"-->
+<!--               value="https://health.api.nvidia.com/v1/medicalimaging/nvidia/vista-3d">-->
       </div>
       <div class="form-group" style="display: none">
         <label for="nimsAuthHeader">Auth Header</label>
         <input type="text" class="form-control" id="nimsAuthHeader" value="" placeholder="Bearer <api_key>">
       </div>
-      <div class="form-group" style="display: none">
+      <div class="form-group">
         <label for="params">Additional Params</label>
-        <textarea class="form-control" id="params" placeholder="{}">{"overlayed_masks": true, "output_ext": ".png"}</textarea>
+        <textarea class="form-control" id="params" placeholder="{}">{}</textarea>
       </div>
       <hr>
     </form>
@@ -243,25 +243,29 @@
       </tr>
       </tbody>
     </table>
-    <div id="resultInfo" style="display: none">
-      <hr />
-      <input id="toggle_masks" type="checkbox" />&nbsp;&nbsp;<b>Toggle Masks</b>
-      <hr />
-      <table class="mytable">
-        <tbody>
-        <tr>
-          <td>Total Instances: </td>
-          <td><b id="polycount">100</b></td>
-        </tr>
-        </tbody>
-      </table>
-    </div>
   </div>
-  <div class="col-md-7">
-    <img id="input_image" crossorigin="anonymous" src="" height="830px"
-         style="display: none" />
-    <img id="output_mask" crossorigin="anonymous" src="" height="830px"
-         style="display: none" />
+  <div class="col-md-9">
+    <progress class="progress-bar" max="100" style="width: 1170px; height: 4px; margin-bottom: 1px;"></progress>
+    <table class="mytable">
+      <tbody>
+      <tr>
+        <td rowspan="2" class="box">
+          <span style="color: darkgray; padding-left: 5px;" id="title_element1"></span>
+          <div id="element1" oncontextmenu="return false" style="height: 780px; width: 780px;"></div>
+        </td>
+        <td class="box">
+          <span style="color: darkgray; padding-left: 5px;" id="title_element2"></span>
+          <div id="element2" oncontextmenu="return false" style="height: 390px; width: 390px;"></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="box">
+          <span style="color: darkgray; padding-left: 5px;" id="title_element3"></span>
+          <div id="element3" oncontextmenu="return false" style="height: 390px; width: 390px;"></div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
