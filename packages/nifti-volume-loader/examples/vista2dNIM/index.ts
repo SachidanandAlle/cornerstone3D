@@ -1,4 +1,5 @@
 import { NIM_PROXY_URL } from './constants';
+import jsZip from 'jszip';
 
 function setup() {
   $(document).ready(async function () {
@@ -51,7 +52,36 @@ async function onRunNIM() {
   document.body.style.cursor = 'wait';
   const response = await fetchSeg();
   if (response.status == 200) {
-    const blob = await response.blob();
+    const contentType = response.headers.get('content-type')?.toLowerCase();
+    let blob = null;
+    let contours = 0;
+    if (contentType === 'application/zip') {
+      const data = await response.arrayBuffer();
+      const zip = await jsZip.loadAsync(data);
+      console.log(zip.files);
+
+      const targetFiles = zip.filter((f) => {
+        return f.endsWith('.png') || Object.keys(zip.files).length < 2;
+      });
+      const contourFiles = zip.filter((f) => {
+        return f.endsWith('contours.json');
+      });
+
+      blob = await Object.values(targetFiles)[0].async('blob');
+      if (Object.values(contourFiles).length) {
+        const obj = JSON.parse(
+          await Object.values(contourFiles)[0].async('string')
+        );
+        console.log('contours', obj);
+        contours = obj?.count;
+      }
+    } else {
+      blob = await response.blob();
+      contours = JSON.parse(
+        response.headers.get('monai-svc-output-properties')
+      )?.contours;
+    }
+
     const reader = new FileReader();
     reader.readAsDataURL(blob);
     reader.onloadend = () => {
@@ -60,10 +90,12 @@ async function onRunNIM() {
       $('#input_image').hide();
       $('#output_mask').show();
 
-      const count = JSON.parse(
-        response.headers.get('MONAI-SVC-OUTPUT-PROPERTIES')
-      ).contours;
-      $('#polycount').text(count);
+      if (contours) {
+        $('#polycount').text(contours);
+        $('#masks_info').show();
+      } else {
+        $('#masks_info').hide();
+      }
     };
   } else {
     if (response.status == 401) {
