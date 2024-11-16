@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>NVIDIA / VISTA-2D NIM</title>
+  <title>NVIDIA / GAN NIM</title>
   <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"
@@ -191,10 +191,10 @@
 <body>
 <div id="demo-title-container">
   <div class="card">
-    <h1><span>NVIDIA</span> / MONAI Vista2D Inference</h1>
-    <p>VISTA2D bundle for cell image analysis. This is an example, not to be used for diagnostic purposes.</p>
+    <h1><span>NVIDIA</span> / TAO-GAN NIM</h1>
+    <p>To Generate Images for Endoscopy and Gastroscopy.</p>
     <div class="tags">
-      <span class="tag">cell segmentation</span>
+      <span class="tag">GAN</span>
       <span class="tag">medical imaging</span>
     </div>
   </div>
@@ -204,18 +204,34 @@
   <div class="col-md-3 card2" style="height: 830px">
     <form action="javascript:void(0);">
       <div class="form-group">
-        <label for="imageURI">Image URI</label>
-        <input type="url" class="form-control" id="imageURI" value="/examples/1.png">
-        <!--        <input type="url" class="form-control" id="imageURI"-->
-        <!--               value="http://10.117.4.45:9000/img02.png">-->
-        <button class="btn-xs" style="width: 100%" id="loadImage">Load Image</button>
+        <label for="model">Model/Type</label>
+        <select id="model" class="form-control">
+          <option value="EndoGAN" selected>EndoGAN</option>
+          <option value="GastroGAN">GastroGAN</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="seed">Output Count</label>
+        <input id="image_count" type="number" class="form-control" min="1" step="1" value="1">
+      </div>
+      <div class="form-group">
+        <label for="seed">Seed</label>
+        <input id="seed" type="number" class="form-control" min="0">
+      </div>
+      <div class="form-group">
+        <label for="rotate">Truncation PSI</label>
+        <input id="truncation_psi" type="number" class="form-control" min="0" step="0.1" value="1.0">
+      </div>
+      <div class="form-group">
+        <label for="rotate">Rotate</label>
+        <input id="rotate" type="number" class="form-control" min="0" max="360" step="0.5" value="0.0">
       </div>
       <hr>
       <div class="form-group">
         <label for="nimsURI">Inference Endpoint</label>
-        <input type="url" class="form-control" id="nimsURI" value="/v1/run">
-        <!--        <input type="url" class="form-control" id="nimsURI"-->
-        <!--               value="http://10.117.4.45:5000/v1/run">-->
+<!--        <input type="url" class="form-control" id="nimsURI" value="/v1/run">-->
+                <input type="url" class="form-control" id="nimsURI"
+                       value="http://10.117.9.63:8008/gan/inference">
       </div>
       <div class="form-group" style="display: none">
         <label for="nimsAuthHeader">Auth Header</label>
@@ -243,23 +259,8 @@
       </tr>
       </tbody>
     </table>
-    <div id="resultInfo" style="display: none">
-      <hr />
-      <input id="toggle_masks" type="checkbox" />&nbsp;&nbsp;<b>Toggle Masks</b>
-      <hr />
-      <table id="masks_info" class="mytable">
-        <tbody>
-        <tr>
-          <td>Total Instances: </td>
-          <td><b id="polycount">100</b></td>
-        </tr>
-        </tbody>
-      </table>
-    </div>
   </div>
   <div class="col-md-7">
-    <img id="input_image" crossorigin="anonymous" src="" height="830px"
-         style="display: none" />
     <img id="output_mask" crossorigin="anonymous" src="" height="830px"
          style="display: none" />
   </div>
