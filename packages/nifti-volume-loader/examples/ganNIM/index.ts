@@ -6,9 +6,32 @@ function setup() {
     console.log('Document Ready...');
     onInit();
 
+    document.getElementById('model').onchange = async () => {
+      await onSelectModel();
+    };
+
     document.getElementById('runNIM').onclick = async () => {
       await onRunNIM();
     };
+
+    const carouselElem = document.querySelector('.main-carousel');
+    const flkty = new Flickity(carouselElem, {
+      cellAlign: 'left',
+      pageDots: false,
+      contain: true,
+      autoPlay: false,
+      wrapAround: true,
+      fade: true,
+      on: {
+        ready: function () {
+          const container = document.querySelector('.flickity-slider');
+          lightGallery(container, {
+            selector: '.carousel-cell',
+          });
+        },
+      },
+    });
+    window.flkty = flkty;
   });
 }
 
@@ -21,12 +44,47 @@ async function onInit() {
   $('#runNIM').prop('disabled', false);
 }
 
+async function onSelectModel() {
+  const model = $('#model').val().toString();
+  if (model === 'EndoGAN') {
+    $('#class_idx_container').hide();
+  } else {
+    $('#class_idx_container').show();
+  }
+}
+
+function addOutput(blob) {
+  const reader = new FileReader();
+  reader.readAsDataURL(blob);
+  reader.onloadend = () => {
+    const $cellElem = $(
+      '<a class="carousel-cell" data-src="' +
+        reader.result +
+        '"><img class="img-responsive"  src="' +
+        reader.result +
+        '"/></a>'
+    );
+    window.flkty.append($cellElem);
+    window.flkty.reloadCells();
+
+    const container = document.querySelector('.flickity-slider');
+    lightGallery(container, {
+      selector: '.carousel-cell',
+    });
+  };
+}
+
 async function onRunNIM() {
   $('#runNIM').prop('disabled', true);
   $('#runStatus').show();
+  for (let i = window.flkty.cells.length; i > 0; i--) {
+    window.flkty.remove(flkty.selectedElement);
+  }
+  window.flkty.reloadCells();
 
   document.body.style.cursor = 'wait';
   const response = await fetchSeg();
+
   if (response.status == 200) {
     const contentType = response.headers.get('content-type')?.toLowerCase();
     let blob = null;
@@ -38,17 +96,14 @@ async function onRunNIM() {
       const targetFiles = zip.filter((f) => {
         return f.endsWith('.png') || Object.keys(zip.files).length < 2;
       });
-      blob = await Object.values(targetFiles)[0].async('blob');
+      for (let i = 0; i < targetFiles.length; i++) {
+        blob = await Object.values(targetFiles)[i].async('blob');
+        addOutput(blob);
+      }
     } else {
       blob = await response.blob();
+      addOutput(blob);
     }
-
-    const reader = new FileReader();
-    reader.readAsDataURL(blob);
-    reader.onloadend = () => {
-      $('#output_mask').attr('src', reader.result);
-      $('#output_mask').show();
-    };
   } else {
     if (response.status == 401) {
       alert(
@@ -84,7 +139,7 @@ async function fetchSeg() {
   const image_count = parseInt($('#image_count').val().toString());
   const rotate = parseFloat($('#rotate').val().toString());
   const truncation_psi = parseFloat($('#truncation_psi').val().toString());
-  console.log('truncation_psi', truncation_psi, truncation_psi === null);
+  const class_idx = parseInt($('#class_idx').val().toString());
 
   const nimReqData = {
     model: model,
@@ -93,7 +148,10 @@ async function fetchSeg() {
     truncation_psi: isNaN(truncation_psi) ? 1.0 : truncation_psi,
     translate: [0.0, 0.0],
     rotate: isNaN(rotate) ? 0.0 : rotate,
-    class_idx: null,
+    class_idx:
+      model === 'EndoGAN' || isNaN(class_idx)
+        ? null
+        : Math.min(5, Math.max(0, class_idx)),
   };
 
   console.log('nimReqData', nimReqData);
